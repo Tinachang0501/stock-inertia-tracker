@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李長坤波段操盤法 — 歷史投資成效與抱牢含息回測實驗室</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: white;
+            padding: 2.2rem 0;
+            border-bottom: 4px solid #f59e0b;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            padding: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: all 0.25s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .strat-card {
+            border-left: 5px solid #2563eb;
+        }
+
+        .bh-card {
+            border-left: 5px solid #10b981;
+        }
+
+        .diff-card {
+            border-left: 5px solid #f59e0b;
+        }
+
+        .badge-tw-red {
+            background-color: #fee2e2;
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .badge-tw-green {
+            background-color: #dcfce7;
+            color: #16a34a;
+            font-weight: 700;
+        }
+
+        .chart-container-box {
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+        }
+
+        .insight-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+            border-left: 5px solid #3b82f6;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .btn-range {
+            font-weight: 700;
+            border-radius: 30px;
+            padding: 0.4rem 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .trade-log-table th {
+            background-color: #f1f5f9;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .trade-log-table td {
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部導航 -->
+    <header class="header-gradient">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-flask-vial me-1"></i>策略歷史回測實驗室</span>
+                        <span class="badge bg-info text-dark px-2 py-1"><i class="fa-solid fa-scale-balanced me-1"></i>李長坤操盤法 vs 買進抱牢(含息)</span>
+                    </div>
+                    <h1 class="h2 fw-bold mb-1">李長坤波段操盤法 — 歷史投資成效回測與含息績效比較</h1>
+                    <p class="mb-0 text-light opacity-90 small">
+                        驗證「40%基本倉長線防守，60%加碼倉過高追進、破低砍半」波段紀律，對比「長線死抱不賣、領取股息」在不同年期與不同市況下的實證報酬率與風險防禦力！
+                    </p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="index.html" class="btn btn-outline-light rounded-pill px-3 py-2 fw-bold btn-sm shadow-sm">
+                        <i class="fa-solid fa-chart-line me-1"></i>返回【每日/每週 即時戰報】
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-4">
+
+        <!-- 回測參數設定控制中心 -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-sliders text-warning me-2"></i>回測參數設定（標的、回測年期、K棒週期、初始本金）</span>
+                <span class="badge bg-primary">真實歷史行情 + 現金股利除息即時試算</span>
+            </div>
+            <div class="card-body p-4 bg-light">
+                <div class="row g-3 align-items-end">
+                    <!-- 標的選擇 -->
+                    <div class="col-md-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark mb-0"><i class="fa-solid fa-bullseye text-primary me-1"></i>回測標的</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 rounded-pill fw-bold" style="font-size: 0.75rem;" onclick="openCustomStockModal()">
+                                <i class="fa-solid fa-plus me-1"></i>新增自選股
+                            </button>
+                        </div>
+                        <select class="form-select fw-bold" id="selectStock" onchange="onStockOrIntervalChange()">
+                            <optgroup label="🌟 核心監控持股">
+                                <option value="2330" selected>2330 台積電 (護國神山)</option>
+                                <option value="SPY">SPY 標普500 ETF (美股大盤)</option>
+                                <option value="00981A">00981A 主動統一台股增長 (主動型)</option>
+                                <option value="00982A">00982A 主動群益台灣強棒 (主動型)</option>
+                                <option value="00992A">00992A 主動群益科技創新 (主動型)</option>
+                            </optgroup>
+                            <optgroup label="🏆 熱門權值龍頭股">
+                                <option value="2454">2454 聯發科</option>
+                                <option value="2317">2317 鴻海</option>
+                                <option value="2382">2382 廣達</option>
+                                <option value="2603">2603 長榮</option>
+                                <option value="3231">3231 緯創</option>
+                            </optgroup>
+                            <optgroup label="📈 國民熱門 ETF">
+                                <option value="0050">0050 元大台灣50</option>
+                                <option value="0056">0056 元大高股息</option>
+                                <option value="00878">00878 國泰永續高股息</option>
+                                <option value="00919">00919 群益台灣精選高息</option>
+                                <option value="00929">00929 復華台灣科技優息</option>
+                                <option value="00940">00940 元大臺灣價值高息</option>
+                            </optgroup>
+                            <optgroup label="🇺🇸 美股熱門科技巨頭">
+                                <option value="QQQ">QQQ 納斯達克100 ETF</option>
+                                <option value="NVDA">NVDA 輝達 NVIDIA</option>
+                                <option value="AAPL">AAPL 蘋果 Apple</option>
+                                <option value="TSLA">TSLA 特斯拉 Tesla</option>
+                                <option value="MSFT">MSFT 微軟 Microsoft</option>
+                            </optgroup>
+                            <optgroup label="⚡ 使用者自選新增" id="customStockOptGroup">
+                                <!-- 動態新增自選股 -->
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- 回測年期選擇 (以年為單位) -->
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold text-dark"><i class="fa-solid fa-calendar-days text-success me-1"></i>回測比較區間（以年為單位）</label>
+                        <div class="btn-group w-100" role="group" id="yearButtonGroup">
+                            <input type="radio" class="btn-check" name="yearRange" id="year1" value="1" onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year1">1 年</label>
+
+                            <input type="radio" class="btn-check" name="yearRange" id="year2" value="2" checked onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year2">2 年</label>
+
+                            <input type="radio" class="btn-check" name="yearRange" id="year3" value="3" onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year3" id="labelYear3">3 年</label>
+
+                            <input type="radio" class="btn-check" name="yearRange" id="year5" value="5" onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year5" id="labelYear5">5 年</label>
+
+                            <input type="radio" class="btn-check" name="yearRange" id="year10" value="10" onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year10" id="labelYear10">10 年</label>
+
+                            <input type="radio" class="btn-check" name="yearRange" id="year15" value="15" onchange="runBacktest()">
+                            <label class="btn btn-outline-primary fw-bold btn-sm py-2" for="year15" id="labelYear15">15 年</label>
+                        </div>
+                    </div>
+
+                    <!-- 操盤週期 (日K vs 週K) -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-dark"><i class="fa-solid fa-clock text-warning me-1"></i>操盤檢視週期</label>
+                        <select class="form-select fw-bold" id="selectTimeframe" onchange="runBacktest()">
+                            <option value="daily" selected>日K 短波段 (每日盯盤)</option>
+                            <option value="weekly">週K 長波段 (每週下一單)</option>
+                        </select>
+                    </div>
+
+                    <!-- 初始投入本金 -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-dark"><i class="fa-solid fa-wallet text-info me-1"></i>期初投入本金 (NTD)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white fw-bold">NT$</span>
+                            <input type="number" class="form-control fw-bold" id="inputCapital" value="1000000" step="100000" onchange="runBacktest()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 策略參數細項 (展開收合) -->
+                <div class="mt-3 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="small text-muted">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                        <strong>策略參數預設：</strong>40% 基本防守倉（拉回絕對不賣），向上突破加碼試單（8%階梯），向下破低立即砍半加碼倉抽回現金，領取之現金股利全數累計至停泊資金。
+                    </div>
+                    <div>
+                        <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="runBacktest()">
+                            <i class="fa-solid fa-play me-1"></i>立即重新執行歷史回測
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 回測核心三方數據比對面板 -->
+        <div class="row g-3 mb-4">
+            <!-- 李長坤波段操盤法 -->
+            <div class="col-lg-4">
+                <div class="metric-card strat-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary px-2 py-1"><i class="fa-solid fa-shield-halved me-1"></i>李長坤操盤法 (量化波段)</span>
+                        <span class="small text-muted" id="stratTimeframeLabel">日K每日盯盤</span>
+                    </div>
+                    <div class="text-muted small">期末總資產價值 (現值+停泊)</div>
+                    <div class="h3 fw-bold text-primary mb-1" id="stratFinalEquity">NT$ 0</div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span class="fs-5 fw-bold" id="stratRoi">+0.0%</span>
+                        <span class="text-muted small">總累積報酬率</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="small text-secondary">
+                        <div class="d-flex justify-content-between py-1">
+                            <span>領取累積現金股息：</span>
+                            <strong class="text-dark" id="stratDividends">NT$ 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>手頭留存停泊現金：</span>
+                            <strong class="text-dark" id="stratCash">NT$ 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>持股留倉市值：</span>
+                            <strong class="text-dark" id="stratStockValue">NT$ 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>總交易觸發次數：</span>
+                            <strong class="text-dark" id="stratTradeCount">0 次 (加碼 0 / 減碼 0)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>歷史最大回撤 (MDD)：</span>
+                            <strong class="text-danger" id="stratMdd">-0.0%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 買進抱牢 (含股息再計入) -->
+            <div class="col-lg-4">
+                <div class="metric-card bh-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success px-2 py-1"><i class="fa-solid fa-sack-dollar me-1"></i>買進抱牢死不賣 (含累積股息)</span>
+                        <span class="small text-muted">Buy & Hold</span>
+                    </div>
+                    <div class="text-muted small">期末總資產價值 (股票現值+累積股息)</div>
+                    <div class="h3 fw-bold text-success mb-1" id="bhFinalEquity">NT$ 0</div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span class="fs-5 fw-bold" id="bhRoi">+0.0%</span>
+                        <span class="text-muted small">總累積報酬率</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="small text-secondary">
+                        <div class="d-flex justify-content-between py-1">
+                            <span>領取累積現金股息：</span>
+                            <strong class="text-success" id="bhDividends">NT$ 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>持股留倉市值：</span>
+                            <strong class="text-dark" id="bhStockValue">NT$ 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>交易次數：</span>
+                            <strong class="text-dark">1 次 (期初買進後完全不動)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>現金留存：</span>
+                            <strong class="text-dark">NT$ 0 (資金100%全壓在市場)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>歷史最大回撤 (MDD)：</span>
+                            <strong class="text-danger" id="bhMdd">-0.0%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 策略差異深度對比與核心解析 -->
+            <div class="col-lg-4">
+                <div class="metric-card diff-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-warning text-dark px-2 py-1"><i class="fa-solid fa-scale-balanced me-1"></i>風險防禦與獲利差距分析</span>
+                        <span class="badge bg-secondary" id="marketTypeBadge">牛市向上主升段</span>
+                    </div>
+                    <div class="text-muted small">兩者期末獲利金額差距</div>
+                    <div class="h3 fw-bold text-dark mb-1" id="diffEquity">NT$ 0</div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span class="fs-5 fw-bold text-danger" id="diffRoi">相差 0.0%</span>
+                        <span class="text-muted small">報酬率差異</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="small" id="diffInsightSummary">
+                        <!-- 動態產生 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 歷史走勢與資產淨值曲線對比圖 -->
+        <div class="chart-container-box mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h3 class="h5 fw-bold mb-1 text-dark">
+                        <i class="fa-solid fa-chart-line text-primary me-2"></i>資產淨值成長曲線：李長坤波段法 vs 買進抱牢(含息)
+                    </h3>
+                    <span class="small text-muted" id="chartSubtext">
+                        從期初 100 萬開始，歷經每日/每週過昨高加碼、破昨低減碼抽回現金，以及除息領息的真實資產變化曲線
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="small"><span class="badge" style="background:#2563eb;">&nbsp;</span> 李長坤操盤法資產</span>
+                    <span class="small"><span class="badge" style="background:#10b981;">&nbsp;</span> 買進抱牢(含息)資產</span>
+                    <span class="small"><span class="badge" style="background:#94a3b8;">&nbsp;</span> 標的股價原始走勢</span>
+                </div>
+            </div>
+            <div style="position: relative; height: 420px; width: 100%;">
+                <canvas id="backtestChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 李長坤操盤法實證啟示卡 -->
+        <div class="insight-box mb-4">
+            <h4 class="h6 fw-bold text-primary mb-2">
+                <i class="fa-solid fa-lightbulb me-1"></i>李老師操盤心法量化回測結論與深度啟示：
+            </h4>
+            <div class="row g-3 small text-secondary">
+                <div class="col-md-4">
+                    <strong class="text-dark d-block mb-1">🛡️ 1. 為什麼波段法能大幅降低回撤（MDD）？</strong>
+                    買進抱牢在遭遇大盤暴跌或空頭洗盤時，必須承受 100% 部位的全面回撤（常面臨 -20% ~ -40% 的帳面虧損恐慌）。李長坤法破昨低第一時間砍半加碼倉，鎖住波段利潤抽回現金，保留手頭大量停泊現金，讓最大跌幅大幅收斂！
+                </div>
+                <div class="col-md-4">
+                    <strong class="text-dark d-block mb-1">💰 2. 停泊現金的再投入威力</strong>
+                    抱著不賣的投資人，在底部暴跌時往往「已經滿手股票、毫無現金可以抄底加碼」。而李長坤法砍半抽回的停泊資金，恰好可以在「過昨高即可開始加碼（不需等收盤紅K）」時，以雙倍火力大膽追進！
+                </div>
+                <div class="col-md-4">
+                    <strong class="text-dark d-block mb-1">🎯 3. 40% 底倉確保「絕不踏空大行情」</strong>
+                    許多投資人做波段容易「賣光之後一路看著股票噴出不敢買」。李長坤策略明訂「40%基本倉拉回絕對不賣」，確保了即便市場震盪洗盤，核心部位始終留在場內享受長期複利與股息分配！
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易執行紀錄明細 (前 50 筆) -->
+        <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+            <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
+                <h5 class="h6 fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-list-check text-primary me-2"></i>策略交易決策歷史明細（最近 30 次加碼與減碼觸發點）
+                </h5>
+                <span class="badge bg-light text-dark border" id="tradeSummaryBadge">共觸發 0 次交易</span>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-hover table-striped mb-0 trade-log-table">
+                    <thead>
+                        <tr>
+                            <th>交易日期</th>
+                            <th>動作類型</th>
+                            <th>觸發價格</th>
+                            <th>買賣股數</th>
+                            <th>交易金額 (NTD)</th>
+                            <th>交易後持股</th>
+                            <th>手頭停泊現金</th>
+                            <th>領取股息</th>
+                            <th>當日總淨值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradeLogBody">
+                        <!-- JavaScript 動態渲染 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 新增自選回測股票 Modal -->
+    <div class="modal fade" id="customStockModal" tabindex="-1" aria-labelledby="customStockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white p-3">
+                    <h5 class="modal-title fw-bold" id="customStockModalLabel">
+                        <i class="fa-solid fa-plus-circle text-warning me-2"></i>新增自選回測標的（台股／美股）
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <form id="customStockForm" onsubmit="handleFetchCustomStock(event)">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">股票或 ETF 代號 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control fw-bold" id="inputCustomSymbol" placeholder="例如: 2308 (台達電) 或 AMD、GOOGL" required>
+                            <div class="form-text" style="font-size: 0.75rem;">
+                                台股輸入 4~6 碼代號（如 2308、3008、006208）；美股輸入英文代碼（如 AMD、GOOGL、VOO、SOXX）。
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">股票名稱（選填）</label>
+                            <input type="text" class="form-control" id="inputCustomName" placeholder="例如: 台達電">
+                        </div>
+                        <div class="p-3 bg-white rounded-3 border small text-secondary mb-3">
+                            <i class="fa-solid fa-cloud-arrow-down text-primary me-1"></i>
+                            <strong>即時歷史連線：</strong>點擊「連線載入並回測」後，系統將自動從官方歷史數據庫抓取過去 1~5 年日K與週K行情，並比對各年度除權息現金股息，完成相同條件回測！
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnSubmitCustomStock">
+                                <i class="fa-solid fa-bolt me-1"></i>連線載入並回測
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
+    <footer class="bg-white border-top py-4 mt-5">
+        <div class="container text-center text-muted small">
+            <p class="mb-1">李長坤操盤法實證回測實驗室 ｜ 遵循 40% 基本防守倉、過昨高即可加碼（不需等收盤紅K）、破昨低砍半動態策略</p>
+            <p class="mb-0 text-secondary" style="font-size: 0.8rem;">
+                免責聲明：本回測工具僅供教學研究與歷史數據策略驗證，過去績效不代表未來表現。投資交易請審慎評估風險。
+            </p>
+        </div>
+    </footer>
+
+    <!-- 載入歷史數據快取檔案 -->
+    <script src="backtest_data.js"></script>
+
+    <script>
+        let myChart = null;
+
+        // 當切換標的時，更新年期按鈕選項（ETF 剛成立未滿 3~15 年時自動停用）
+        function onStockOrIntervalChange() {
+            const sym = document.getElementById('selectStock').value;
+            const stockData = BACKTEST_CACHE_DATA[sym];
+            const has3y = stockData && stockData.daily['3'] !== undefined;
+            const has5y = stockData && stockData.daily['5'] !== undefined;
+            const has10y = stockData && stockData.daily['10'] !== undefined;
+            const has15y = stockData && stockData.daily['15'] !== undefined;
+
+            const radio3 = document.getElementById('year3');
+            const radio5 = document.getElementById('year5');
+            const radio10 = document.getElementById('year10');
+            const radio15 = document.getElementById('year15');
+
+            const label3 = document.getElementById('labelYear3');
+            const label5 = document.getElementById('labelYear5');
+            const label10 = document.getElementById('labelYear10');
+            const label15 = document.getElementById('labelYear15');
+
+            radio3.disabled = !has3y;
+            radio5.disabled = !has5y;
+            radio10.disabled = !has10y;
+            radio15.disabled = !has15y;
+
+            if (!has3y) {
+                label3.classList.add('opacity-50');
+                label3.title = '該標的尚無 3 年歷史資料';
+            } else {
+                label3.classList.remove('opacity-50');
+                label3.title = '';
+            }
+
+            if (!has5y) {
+                label5.classList.add('opacity-50');
+                label5.title = '該標的尚無 5 年歷史資料';
+            } else {
+                label5.classList.remove('opacity-50');
+                label5.title = '';
+            }
+
+            if (!has10y) {
+                label10.classList.add('opacity-50');
+                label10.title = '該標的掛牌未滿 10 年';
+            } else {
+                label10.classList.remove('opacity-50');
+                label10.title = '';
+            }
+
+            if (!has15y) {
+                label15.classList.add('opacity-50');
+                label15.title = '該標的掛牌未滿 15 年';
+            } else {
+                label15.classList.remove('opacity-50');
+                label15.title = '';
+            }
+
+            // 若目前選取的年期不可用，則自動退回有資料的最大年期
+            const currentSelectedYear = document.querySelector('input[name="yearRange"]:checked').value;
+            if (
+                (currentSelectedYear === '15' && !has15y) ||
+                (currentSelectedYear === '10' && !has10y) ||
+                (currentSelectedYear === '5' && !has5y) ||
+                (currentSelectedYear === '3' && !has3y)
+            ) {
+                if (has15y) document.getElementById('year15').checked = true;
+                else if (has10y) document.getElementById('year10').checked = true;
+                else if (has5y) document.getElementById('year5').checked = true;
+                else if (has3y) document.getElementById('year3').checked = true;
+                else document.getElementById('year1').checked = true;
+            }
+
+            runBacktest();
+        }
+
+        // 解析 K 棒與股利數據
+        function parseHistoricalBars(rawDataset) {
+            if (!rawDataset || !rawDataset.timestamp) return [];
+            const ts = rawDataset.timestamp;
+            const q = rawDataset.quote;
+            const divs = rawDataset.events && rawDataset.events.dividends ? rawDataset.events.dividends : {};
+            const divMap = {};
+            for (const k in divs) {
+                const item = divs[k];
+                divMap[item.date] = parseFloat(item.amount) || 0.0;
+            }
+
+            const bars = [];
+            for (let i = 0; i < ts.length; i++) {
+                if (q.close[i] === null || q.high[i] === null || q.low[i] === null || q.open[i] === null) {
+                    continue;
+                }
+                const dateObj = new Date(ts[i] * 1000);
+                const dateStr = dateObj.toISOString().split('T')[0];
+                bars.push({
+                    time: ts[i],
+                    dateStr: dateStr,
+                    open: parseFloat(q.open[i]),
+                    high: parseFloat(q.high[i]),
+                    low: parseFloat(q.low[i]),
+                    close: parseFloat(q.close[i]),
+                    dividend: divMap[ts[i]] || 0.0
+                });
+            }
+            return bars;
+        }
+
+        // 核心回測演算法
+        function runBacktest() {
+            const stockCode = document.getElementById('selectStock').value;
+            const yearStr = document.querySelector('input[name="yearRange"]:checked').value;
+            const timeframe = document.getElementById('selectTimeframe').value;
+            const initialCapital = parseFloat(document.getElementById('inputCapital').value) || 1000000;
+
+            const stockInfo = BACKTEST_CACHE_DATA[stockCode];
+            if (!stockInfo) return;
+
+            const dataset = (timeframe === 'weekly') ? stockInfo.weekly[yearStr] : stockInfo.daily[yearStr];
+            if (!dataset) return;
+
+            const bars = parseHistoricalBars(dataset);
+            if (bars.length < 2) return;
+
+            // 1. 買進抱牢 (Buy & Hold) 模擬
+            const bhStartPrice = bars[0].close;
+            const bhShares = initialCapital / bhStartPrice;
+            let bhAccumDividends = 0;
+            const bhEquityCurve = [];
+            let bhPeak = initialCapital;
+            let bhMaxDrawdown = 0;
+
+            bars.forEach(b => {
+                if (b.dividend > 0) {
+                    bhAccumDividends += bhShares * b.dividend;
+                }
+                const totalEquity = (bhShares * b.close) + bhAccumDividends;
+                bhEquityCurve.push(totalEquity);
+                if (totalEquity > bhPeak) bhPeak = totalEquity;
+                const dd = (bhPeak - totalEquity) / bhPeak;
+                if (dd > bhMaxDrawdown) bhMaxDrawdown = dd;
+            });
+
+            const bhFinalEquity = bhEquityCurve[bhEquityCurve.length - 1];
+            const bhRoi = ((bhFinalEquity - initialCapital) / initialCapital) * 100;
+
+            // 2. 李長坤波段操盤法回測
+            // 策略規則：
+            // - 期初以 40% 資金建置基本防守倉 (第一筆或紅K建倉)
+            // - 突破前一根K棒高點 (passedPrevHigh) 順勢加碼，每次動用 8% 階梯額度
+            // - 跌破前一根K棒低點 (brokePrevLow) 加碼倉砍半，抽回本金與利潤至停泊現金
+            // - 基本倉 40% 絕對不賣出！
+            // - 遇到發放股利，持有股數領取之現金股利全數歸入停泊現金
+            let cash = initialCapital;
+            let shares = 0;
+            let baseShares = 0;
+            let premiumShares = 0;
+            let stratAccumDividends = 0;
+            let buyTrades = 0;
+            let sellTrades = 0;
+            const tradeLogs = [];
+            const stratEquityCurve = [];
+            let stratPeak = initialCapital;
+            let stratMaxDrawdown = 0;
+
+            const baseTargetBudget = initialCapital * 0.40;
+            const dynamicStepBudget = initialCapital * 0.08;
+
+            // 第一天以開盤價或收盤價建立起始基本倉
+            const day0Price = bars[0].close;
+            const initialBaseShares = Math.floor(baseTargetBudget / day0Price);
+            if (initialBaseShares > 0) {
+                const cost = initialBaseShares * day0Price;
+                cash -= cost;
+                shares = initialBaseShares;
+                baseShares = initialBaseShares;
+                tradeLogs.push({
+                    date: bars[0].dateStr,
+                    type: '建置40%底倉',
+                    price: day0Price,
+                    shares: initialBaseShares,
+                    amount: cost,
+                    holdingShares: shares,
+                    cash: cash,
+                    div: 0,
+                    equity: cash + (shares * day0Price)
+                });
+            }
+            stratEquityCurve.push(cash + (shares * day0Price));
+
+            for (let i = 1; i < bars.length; i++) {
+                const prev = bars[i - 1];
+                const curr = bars[i];
+
+                // 領取現金股利
+                let currentDivReceived = 0;
+                if (curr.dividend > 0 && shares > 0) {
+                    currentDivReceived = shares * curr.dividend;
+                    stratAccumDividends += currentDivReceived;
+                    cash += currentDivReceived;
+                }
+
+                const passedPrevHigh = curr.high > prev.high;
+                const brokePrevLow = curr.low < prev.low;
+
+                if (brokePrevLow) {
+                    // 向下慣性：加碼倉砍半，基本倉防守不賣
+                    if (premiumShares > 0) {
+                        const cutShares = Math.max(1, Math.floor(premiumShares / 2));
+                        const sellAmount = cutShares * curr.close;
+                        cash += sellAmount;
+                        shares -= cutShares;
+                        premiumShares -= cutShares;
+                        sellTrades++;
+
+                        tradeLogs.push({
+                            date: curr.dateStr,
+                            type: '破低減碼(砍半)',
+                            price: curr.close,
+                            shares: -cutShares,
+                            amount: sellAmount,
+                            holdingShares: shares,
+                            cash: cash,
+                            div: currentDivReceived,
+                            equity: cash + (shares * curr.close)
+                        });
+                    }
+                } else if (passedPrevHigh) {
+                    // 向上慣性：突破過高順勢加碼
+                    // 先補滿基本倉 40%，補滿後則動態加碼至滿倉
+                    const currentInvested = shares * curr.close;
+                    if (currentInvested < baseTargetBudget && cash > 0) {
+                        const buyBudget = Math.min(dynamicStepBudget, cash);
+                        const buyShares = Math.floor(buyBudget / curr.close);
+                        if (buyShares > 0) {
+                            const cost = buyShares * curr.close;
+                            cash -= cost;
+                            shares += buyShares;
+                            baseShares += buyShares;
+                            buyTrades++;
+
+                            tradeLogs.push({
+                                date: curr.dateStr,
+                                type: '過高建基本倉',
+                                price: curr.close,
+                                shares: buyShares,
+                                amount: cost,
+                                holdingShares: shares,
+                                cash: cash,
+                                div: currentDivReceived,
+                                equity: cash + (shares * curr.close)
+                            });
+                        }
+                    } else if (currentInvested < initialCapital && cash > 0) {
+                        // 動態加碼倉
+                        const buyBudget = Math.min(dynamicStepBudget * 1.5, cash);
+                        const buyShares = Math.floor(buyBudget / curr.close);
+                        if (buyShares > 0) {
+                            const cost = buyShares * curr.close;
+                            cash -= cost;
+                            shares += buyShares;
+                            premiumShares += buyShares;
+                            buyTrades++;
+
+                            tradeLogs.push({
+                                date: curr.dateStr,
+                                type: '過高順勢加碼',
+                                price: curr.close,
+                                shares: buyShares,
+                                amount: cost,
+                                holdingShares: shares,
+                                cash: cash,
+                                div: currentDivReceived,
+                                equity: cash + (shares * curr.close)
+                            });
+                        }
+                    }
+                }
+
+                const totalEquity = cash + (shares * curr.close);
+                stratEquityCurve.push(totalEquity);
+
+                if (totalEquity > stratPeak) stratPeak = totalEquity;
+                const dd = (stratPeak - totalEquity) / stratPeak;
+                if (dd > stratMaxDrawdown) stratMaxDrawdown = dd;
+            }
+
+            const stratFinalEquity = stratEquityCurve[stratEquityCurve.length - 1];
+            const stratRoi = ((stratFinalEquity - initialCapital) / initialCapital) * 100;
+            const stratFinalStockValue = shares * bars[bars.length - 1].close;
+
+            // 3. 更新儀表板數據顯示
+            document.getElementById('stratTimeframeLabel').innerText = (timeframe === 'weekly') ? '週K每週下單' : '日K每日盯盤';
+            document.getElementById('stratFinalEquity').innerText = `NT$ ${Math.round(stratFinalEquity).toLocaleString()}`;
+            document.getElementById('stratRoi').innerText = `${stratRoi >= 0 ? '+' : ''}${stratRoi.toFixed(2)}%`;
+            document.getElementById('stratRoi').className = `fs-5 fw-bold ${stratRoi >= 0 ? 'text-danger' : 'text-success'}`;
+            document.getElementById('stratDividends').innerText = `NT$ ${Math.round(stratAccumDividends).toLocaleString()}`;
+            document.getElementById('stratCash').innerText = `NT$ ${Math.round(cash).toLocaleString()}`;
+            document.getElementById('stratStockValue').innerText = `NT$ ${Math.round(stratFinalStockValue).toLocaleString()}`;
+            document.getElementById('stratTradeCount').innerText = `${buyTrades + sellTrades} 次 (加碼 ${buyTrades} / 減碼 ${sellTrades})`;
+            document.getElementById('stratMdd').innerText = `-${(stratMaxDrawdown * 100).toFixed(2)}%`;
+
+            document.getElementById('bhFinalEquity').innerText = `NT$ ${Math.round(bhFinalEquity).toLocaleString()}`;
+            document.getElementById('bhRoi').innerText = `${bhRoi >= 0 ? '+' : ''}${bhRoi.toFixed(2)}%`;
+            document.getElementById('bhRoi').className = `fs-5 fw-bold ${bhRoi >= 0 ? 'text-danger' : 'text-success'}`;
+            document.getElementById('bhDividends').innerText = `NT$ ${Math.round(bhAccumDividends).toLocaleString()}`;
+            document.getElementById('bhStockValue').innerText = `NT$ ${Math.round(bhShares * bars[bars.length - 1].close).toLocaleString()}`;
+            document.getElementById('bhMdd').innerText = `-${(bhMaxDrawdown * 100).toFixed(2)}%`;
+
+            // 4. 差異解析面板
+            const diffAmount = stratFinalEquity - bhFinalEquity;
+            const diffRoiVal = stratRoi - bhRoi;
+            document.getElementById('diffEquity').innerText = `${diffAmount >= 0 ? '+' : ''}NT$ ${Math.round(diffAmount).toLocaleString()}`;
+            document.getElementById('diffEquity').className = `h3 fw-bold mb-1 ${diffAmount >= 0 ? 'text-primary' : 'text-danger'}`;
+            document.getElementById('diffRoi').innerText = `報酬率相差 ${diffRoiVal >= 0 ? '+' : ''}${diffRoiVal.toFixed(2)}%`;
+
+            let insightHtml = '';
+            if (bhRoi > stratRoi) {
+                document.getElementById('marketTypeBadge').innerText = '強勢單邊多頭主升段';
+                document.getElementById('marketTypeBadge').className = 'badge bg-success';
+                insightHtml = `
+                    <div class="text-secondary">
+                        • <strong>回測現象：</strong>在連續向上直噴的強烈大多頭市場中，買進死抱不賣的獲利通常高於波段操作，因為波段法破昨低會砍半減碼，保留手頭停泊現金，並非 100% 隨時滿倉。<br>
+                        • <strong>波段法的真實價值：</strong>雖然在單邊暴漲行情少賺了部分價差，但李老師策略<strong>最大回撤僅 -${(stratMaxDrawdown * 100).toFixed(1)}%</strong>（買進抱牢回撤達 -${(bhMaxDrawdown * 100).toFixed(1)}%），且<strong>手頭隨時留有 NT$ ${Math.round(cash).toLocaleString()} 停泊現金</strong>，心態極度安心踏實！
+                    </div>
+                `;
+            } else {
+                document.getElementById('marketTypeBadge').innerText = '高檔劇烈震盪 / 回檔防禦';
+                document.getElementById('marketTypeBadge').className = 'badge bg-primary';
+                insightHtml = `
+                    <div class="text-secondary">
+                        • <strong>回測現象：</strong>波段操盤法在震盪行情中<strong>勝出買進抱牢</strong>！<br>
+                        • <strong>原因：</strong>破低點時及時砍半抽回現金，在高檔鎖住獲利，避免隨股價回跌坐雲霄飛車，並在轉強時順勢加碼，展現強大防禦力與靈活性！
+                    </div>
+                `;
+            }
+            document.getElementById('diffInsightSummary').innerHTML = insightHtml;
+
+            // 5. 更新折線圖
+            renderChart(bars, stratEquityCurve, bhEquityCurve, initialCapital);
+
+            // 6. 更新交易紀錄表格
+            renderTradeLogTable(tradeLogs);
+        }
+
+        // 渲染折線圖
+        function renderChart(bars, stratEquity, bhEquity, initialCapital) {
+            const ctx = document.getElementById('backtestChart').getContext('2d');
+            const labels = bars.map(b => b.dateStr);
+
+            // 計算股價等比例基準 (將期初股價縮放至期初本金，方便視覺比對)
+            const priceBase = bars[0].close;
+            const normalizedPriceCurve = bars.map(b => (b.close / priceBase) * initialCapital);
+
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '李長坤波段操盤法 (總資產)',
+                            data: stratEquity,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '買進抱牢 (股票現值 + 累積股息)',
+                            data: bhEquity,
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '標的原始股價走勢 (縮放對照)',
+                            data: normalizedPriceCurve,
+                            borderColor: '#94a3b8',
+                            borderWidth: 1.5,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += 'NT$ ' + Math.round(context.parsed.y).toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                callback: function(value) {
+                                    return 'NT$ ' + (value / 10000).toFixed(0) + '萬';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 渲染交易紀錄
+        function renderTradeLogTable(logs) {
+            const tbody = document.getElementById('tradeLogBody');
+            tbody.innerHTML = '';
+            document.getElementById('tradeSummaryBadge').innerText = `共觸發 ${logs.length} 次交易決策`;
+
+            // 取倒數 35 筆展示
+            const displayLogs = logs.slice().reverse().slice(0, 35);
+            displayLogs.forEach(log => {
+                const isBuy = log.shares > 0;
+                const badgeClass = isBuy ? 'badge-tw-red' : 'badge-tw-green';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold">${log.date}</td>
+                    <td><span class="badge ${badgeClass} px-2 py-1">${log.type}</span></td>
+                    <td><strong>${log.price.toFixed(2)}</strong></td>
+                    <td class="${isBuy ? 'text-danger' : 'text-success'} fw-bold">${isBuy ? '+' : ''}${log.shares.toLocaleString()} 股</td>
+                    <td>NT$ ${Math.round(log.amount).toLocaleString()}</td>
+                    <td><strong>${log.holdingShares.toLocaleString()} 股</strong></td>
+                    <td class="text-primary fw-bold">NT$ ${Math.round(log.cash).toLocaleString()}</td>
+                    <td class="text-success">${log.div > 0 ? '+NT$ ' + Math.round(log.div).toLocaleString() : '-'}</td>
+                    <td><strong>NT$ ${Math.round(log.equity).toLocaleString()}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 自選股管理與動態載入
+        let customStockModalInstance = null;
+
+        function openCustomStockModal() {
+            if (!customStockModalInstance) {
+                customStockModalInstance = new bootstrap.Modal(document.getElementById('customStockModal'));
+            }
+            document.getElementById('customStockForm').reset();
+            customStockModalInstance.show();
+        }
+
+        // 載入使用者先前儲存的自選股
+        function loadCustomStocksFromStorage() {
+            try {
+                const stored = localStorage.getItem('user_backtest_custom_stocks');
+                if (stored) {
+                    const customList = JSON.parse(stored);
+                    const group = document.getElementById('customStockOptGroup');
+                    group.innerHTML = '';
+                    customList.forEach(item => {
+                        BACKTEST_CACHE_DATA[item.code] = item.data;
+                        const opt = document.createElement('option');
+                        opt.value = item.code;
+                        opt.innerText = `${item.code} ${item.name} (自選)`;
+                        group.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("載入自選股失敗:", e);
+            }
+        }
+
+        // 儲存自選股至 localStorage
+        function saveCustomStockToStorage(code, name, stockData) {
+            try {
+                let customList = [];
+                const stored = localStorage.getItem('user_backtest_custom_stocks');
+                if (stored) {
+                    customList = JSON.parse(stored);
+                }
+                // 排除既有相同的
+                customList = customList.filter(x => x.code !== code);
+                customList.push({
+                    code: code,
+                    name: name,
+                    data: stockData
+                });
+                localStorage.setItem('user_backtest_custom_stocks', JSON.stringify(customList));
+            } catch (e) {
+                console.error("儲存自選股失敗:", e);
+            }
+        }
+
+        // 處理使用者提交新增股票
+        async function handleFetchCustomStock(e) {
+            e.preventDefault();
+            const rawSym = document.getElementById('inputCustomSymbol').value.trim().toUpperCase();
+            let name = document.getElementById('inputCustomName').value.trim();
+            if (!rawSym) return;
+
+            const cleanCode = rawSym.replace('.TW', '').replace('.TWO', '');
+            if (!name) name = cleanCode;
+
+            // 如果已經在快取中，直接選取
+            if (BACKTEST_CACHE_DATA[cleanCode]) {
+                document.getElementById('selectStock').value = cleanCode;
+                if (customStockModalInstance) customStockModalInstance.hide();
+                onStockOrIntervalChange();
+                Swal.fire('標的已存在', `已切換至 ${cleanCode} ${BACKTEST_CACHE_DATA[cleanCode].name} 進行回測`, 'info');
+                return;
+            }
+
+            Swal.fire({
+                title: `正在抓取 ${cleanCode} 歷史走勢與股利...`,
+                html: `連線官方即時數據庫，抓取過去 1~5 年日K、週K與配息數據中...`,
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                // 判斷台股還是美股 (台股通常為純數字或 5-6 碼代號如 00981A)
+                const isTW = /^[0-9]{4,6}[A-Z]?$/.test(cleanCode);
+                let fetchedData = null;
+
+                if (isTW) {
+                    fetchedData = await fetchTaiwanStockHistorical(cleanCode, name);
+                } else {
+                    fetchedData = await fetchUSStockHistorical(cleanCode, name);
+                }
+
+                if (!fetchedData || !fetchedData.daily['1'] || fetchedData.daily['1'].timestamp.length === 0) {
+                    throw new Error("未能取得足夠的歷史 K 棒資料，請確認股票代號是否正確。");
+                }
+
+                // 存入快取與下拉選單
+                BACKTEST_CACHE_DATA[cleanCode] = fetchedData;
+                saveCustomStockToStorage(cleanCode, name, fetchedData);
+
+                const group = document.getElementById('customStockOptGroup');
+                const opt = document.createElement('option');
+                opt.value = cleanCode;
+                opt.innerText = `${cleanCode} ${name} (自選)`;
+                group.appendChild(opt);
+
+                document.getElementById('selectStock').value = cleanCode;
+                if (customStockModalInstance) customStockModalInstance.hide();
+
+                onStockOrIntervalChange();
+
+                Swal.fire({
+                    title: '成功載入並完成回測！',
+                    text: `已成功取得 ${cleanCode} ${name} 歷史資料並完成策略與含息回測！`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+            } catch (err) {
+                console.error("抓取失敗:", err);
+                Swal.fire('載入失敗', err.message || '連線數據庫異常，請確認代號正確後重試。', 'error');
+            }
+        }
+
+        // 從 FinMind 抓取台股日K、週K與股息歷史
+        async function fetchTaiwanStockHistorical(code, name) {
+            const today = new Date();
+            const fiveYearsAgo = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+            
+            // 1. 抓取股價
+            const priceUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${fiveYearsAgo}`;
+            const pResp = await fetch(priceUrl);
+            if (!pResp.ok) throw new Error("FinMind 股價查詢失敗");
+            const pJson = await pResp.json();
+            const rawBars = pJson.data || [];
+            if (rawBars.length < 20) throw new Error("歷史交易日不足");
+
+            // 2. 抓取配息
+            const divUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockDividend&data_id=${code}&start_date=${fiveYearsAgo}`;
+            let rawDivs = [];
+            try {
+                const dResp = await fetch(divUrl);
+                if (dResp.ok) {
+                    const dJson = await dResp.json();
+                    rawDivs = dJson.data || [];
+                }
+            } catch (e) {
+                console.warn("配息抓取略過:", e);
+            }
+
+            // 配息對照表 (日期 -> 現金股息)
+            const dividendMap = {};
+            rawDivs.forEach(d => {
+                const exDate = d.CashExDividendTradingDate || d.date;
+                const amt = parseFloat(d.CashEarningsDistribution || 0) + parseFloat(d.CashStatutorySurplus || 0);
+                if (exDate && amt > 0) {
+                    dividendMap[exDate] = amt;
+                }
+            });
+
+            // 整理為 Yahoo 相容的結構
+            const timestamps = [];
+            const opens = [];
+            const highs = [];
+            const lows = [];
+            const closes = [];
+            const eventsDividends = {};
+
+            rawBars.forEach(b => {
+                const ts = Math.floor(new Date(b.date).getTime() / 1000);
+                timestamps.push(ts);
+                opens.push(parseFloat(b.open));
+                highs.push(parseFloat(b.max));
+                lows.push(parseFloat(b.min));
+                closes.push(parseFloat(b.close));
+
+                if (dividendMap[b.date]) {
+                    eventsDividends[ts] = {
+                        amount: dividendMap[b.date],
+                        date: ts
+                    };
+                }
+            });
+
+            // 依年期切分 (1y, 2y, 3y, 5y)
+            const resultData = {
+                name: name,
+                symbol: code + '.TW',
+                daily: {},
+                weekly: {}
+            };
+
+            const nowTs = Math.floor(Date.now() / 1000);
+            const yearSec = 365 * 86400;
+
+            [1, 2, 3, 5, 10, 15].forEach(y => {
+                const cutoff = nowTs - (y * yearSec);
+                const subTs = [];
+                const subOpens = [];
+                const subHighs = [];
+                const subLows = [];
+                const subCloses = [];
+                const subDivs = {};
+
+                for (let i = 0; i < timestamps.length; i++) {
+                    if (timestamps[i] >= cutoff) {
+                        subTs.push(timestamps[i]);
+                        subOpens.push(opens[i]);
+                        subHighs.push(highs[i]);
+                        subLows.push(lows[i]);
+                        subCloses.push(closes[i]);
+                        if (eventsDividends[timestamps[i]]) {
+                            subDivs[timestamps[i]] = eventsDividends[timestamps[i]];
+                        }
+                    }
+                }
+
+                if (subTs.length >= 20) {
+                    resultData.daily[y.toString()] = {
+                        timestamp: subTs,
+                        quote: {
+                            open: subOpens,
+                            high: subHighs,
+                            low: subLows,
+                            close: subCloses
+                        },
+                        events: { dividends: subDivs }
+                    };
+
+                    // 自動由日K合成週K
+                    resultData.weekly[y.toString()] = synthesizeWeeklyBars(subTs, subOpens, subHighs, subLows, subCloses, subDivs);
+                }
+            });
+
+            return resultData;
+        }
+
+        // 美股行情抓取 (經由公共跨域鏡像)
+        async function fetchUSStockHistorical(code, name) {
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${code}?interval=1d&range=15y&events=div`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            const resp = await fetch(proxyUrl);
+            if (!resp.ok) throw new Error("美股歷史數據連線失敗，請檢查代碼或稍後再試。");
+            const json = await resp.json();
+            const res = json.chart.result[0];
+
+            const timestamps = res.timestamp || [];
+            const q = res.indicators.quote[0];
+            const events = res.events || {};
+
+            const resultData = {
+                name: name,
+                symbol: code,
+                daily: {},
+                weekly: {}
+            };
+
+            const nowTs = Math.floor(Date.now() / 1000);
+            const yearSec = 365 * 86400;
+
+            [1, 2, 3, 5, 10, 15].forEach(y => {
+                const cutoff = nowTs - (y * yearSec);
+                const subTs = [];
+                const subOpens = [];
+                const subHighs = [];
+                const subLows = [];
+                const subCloses = [];
+                const subDivs = {};
+
+                for (let i = 0; i < timestamps.length; i++) {
+                    if (timestamps[i] >= cutoff && q.close[i] !== null) {
+                        subTs.push(timestamps[i]);
+                        subOpens.push(q.open[i]);
+                        subHighs.push(q.high[i]);
+                        subLows.push(q.low[i]);
+                        subCloses.push(q.close[i]);
+                    }
+                }
+
+                if (events.dividends) {
+                    for (const k in events.dividends) {
+                        const d = events.dividends[k];
+                        if (d.date >= cutoff) {
+                            subDivs[d.date] = d;
+                        }
+                    }
+                }
+
+                if (subTs.length >= 20) {
+                    resultData.daily[y.toString()] = {
+                        timestamp: subTs,
+                        quote: {
+                            open: subOpens,
+                            high: subHighs,
+                            low: subLows,
+                            close: subCloses
+                        },
+                        events: { dividends: subDivs }
+                    };
+                    resultData.weekly[y.toString()] = synthesizeWeeklyBars(subTs, subOpens, subHighs, subLows, subCloses, subDivs);
+                }
+            });
+
+            return resultData;
+        }
+
+        // 將日K合成週K
+        function synthesizeWeeklyBars(ts, opens, highs, lows, closes, divs) {
+            const wTs = [];
+            const wOpens = [];
+            const wHighs = [];
+            const wLows = [];
+            const wCloses = [];
+            const wDivs = {};
+
+            let currWeek = -1;
+            let currentBar = null;
+
+            for (let i = 0; i < ts.length; i++) {
+                const d = new Date(ts[i] * 1000);
+                // 取得 ISO 週數
+                const startOfYear = new Date(d.getFullYear(), 0, 1);
+                const weekNum = Math.ceil((((d - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+                const weekKey = `${d.getFullYear()}_${weekNum}`;
+
+                if (currWeek !== weekKey) {
+                    if (currentBar) {
+                        wTs.push(currentBar.ts);
+                        wOpens.push(currentBar.open);
+                        wHighs.push(currentBar.high);
+                        wLows.push(currentBar.low);
+                        wCloses.push(currentBar.close);
+                    }
+                    currWeek = weekKey;
+                    currentBar = {
+                        ts: ts[i],
+                        open: opens[i],
+                        high: highs[i],
+                        low: lows[i],
+                        close: closes[i]
+                    };
+                } else {
+                    currentBar.high = Math.max(currentBar.high, highs[i]);
+                    currentBar.low = Math.min(currentBar.low, lows[i]);
+                    currentBar.close = closes[i];
+                }
+
+                if (divs[ts[i]]) {
+                    wDivs[ts[i]] = divs[ts[i]];
+                }
+            }
+
+            if (currentBar) {
+                wTs.push(currentBar.ts);
+                wOpens.push(currentBar.open);
+                wHighs.push(currentBar.high);
+                wLows.push(currentBar.low);
+                wCloses.push(currentBar.close);
+            }
+
+            return {
+                timestamp: wTs,
+                quote: {
+                    open: wOpens,
+                    high: wHighs,
+                    low: wLows,
+                    close: wCloses
+                },
+                events: { dividends: wDivs }
+            };
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCustomStocksFromStorage();
+            onStockOrIntervalChange();
+        });
+    </script>
+</body>
+</html>
