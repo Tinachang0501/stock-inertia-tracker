@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>波段慣性操盤系統 — 每日加減碼訊號戰報 ＆ 資金停泊管理</title>
+    
+    <!-- OpenGraph Metadata for LINE and Social Sharing -->
+    <meta property="og:title" content="波段慣性操盤系統 — 每日加減碼訊號戰報 ＆ 資金停泊管理">
+    <meta property="og:description" content="遵循李長坤老師操盤心法：40%基本倉長線防守，60%動態倉過昨高加碼、破昨低砍半！支援總資金增減、個股總價值、未實現獲利成效、實現獲利累計至停泊資金與加碼金額試算。">
+    <meta property="og:type" content="website">
+
+    <!-- Bootstrap 5, FontAwesome & SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-navy: #0f172a;
+            --secondary-navy: #1e293b;
+            --card-border: #e2e8f0;
+            --bg-body: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
+            color: white;
+            padding: 2.5rem 0 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-bottom: 3px solid #60a5fa;
+        }
+
+        .stock-card {
+            background: white;
+            border-radius: 18px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+        }
+
+        .signal-sell-box {
+            background-color: #fef2f2;
+            border: 1.5px solid #ef4444;
+            color: #991b1b;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .signal-buy-box {
+            background-color: #f0fdf4;
+            border: 1.5px solid #22c55e;
+            color: #166534;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .signal-watch-box {
+            background-color: #f0f9ff;
+            border: 1.5px solid #0284c7;
+            color: #075985;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .signal-holdbase-box {
+            background-color: #fffbeb;
+            border: 1.5px solid #f59e0b;
+            color: #92400e;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .metric-cell {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0.6rem 0.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .progress-thin {
+            height: 12px;
+            border-radius: 6px;
+            background-color: #e2e8f0;
+        }
+
+        .teaching-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            padding: 1.5rem;
+        }
+
+        .btn-share-line {
+            background-color: #06c755;
+            color: white;
+            font-weight: 700;
+            border: none;
+        }
+        .btn-share-line:hover {
+            background-color: #05aa48;
+            color: white;
+        }
+
+        .badge-tw-red {
+            background-color: #dc2626;
+            color: white;
+        }
+        .badge-tw-green {
+            background-color: #16a34a;
+            color: white;
+        }
+
+        .profit-pos {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .profit-neg {
+            color: #16a34a;
+            font-weight: 700;
+        }
+
+        .kpi-card {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background: white;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .capital-ctrl-box {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 20px;
+            color: white;
+            padding: 1.75rem;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 操盤週期切換標籤 (日K vs 週K) */
+        .timeframe-nav-box {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .btn-timeframe {
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-weight: 700;
+            padding: 0.6rem 1.5rem;
+            border-radius: 30px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-timeframe:hover {
+            color: #1e293b;
+            background: #f1f5f9;
+        }
+
+        .btn-timeframe.active {
+            background: #2563eb !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* 資產配置比例中樞樣式 */
+        .alloc-table th {
+            background-color: #0f172a !important;
+            color: #f8fafc;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .alloc-table td {
+            vertical-align: middle;
+            font-size: 0.85rem;
+        }
+
+        .alloc-input-ratio {
+            width: 85px;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 8px;
+        }
+
+        .alloc-input-holding {
+            width: 100px;
+            font-weight: 700;
+            text-align: right;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .alloc-input-cost {
+            width: 95px;
+            font-weight: 700;
+            text-align: right;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .alloc-legend-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            background: #f1f5f9;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .alloc-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            display: inline-block;
+        }
+
+        /* 語言切換按鈕樣式 (中英日) */
+        .lang-btn {
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            color: #cbd5e1 !important;
+            font-size: 0.75rem !important;
+            background: transparent !important;
+            padding: 0.2rem 0.6rem !important;
+            transition: all 0.2s ease !important;
+            line-height: 1.2;
+        }
+        .lang-btn:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
+        }
+        .lang-btn.active {
+            background-color: #f59e0b !important;
+            color: #0f172a !important;
+            border-color: #f59e0b !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部導航與標題 -->
+    <header class="header-gradient">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1" data-i18n="header_badge1"><i class="fa-solid fa-chart-line me-1"></i>李長坤操盤法實踐版</span>
+                        <span class="badge bg-info text-dark px-2 py-1" data-i18n="header_badge2"><i class="fa-solid fa-clock-rotate-left me-1"></i>盤後/即時同步</span>
+                    </div>
+                    <h1 class="h2 fw-bold mb-1" data-i18n="header_title">波段慣性操盤系統 — 每日加減碼訊號戰報</h1>
+                    <p class="mb-0 text-light opacity-90 small" data-i18n="header_desc">
+                        遵循「40%基本倉長線防守，60%動態倉過昨高加碼、破昨低砍半」量化策略 ｜ 支援總資金動態增減與停泊資金管理
+                    </p>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <!-- 語言切換按鈕群 (中英日) -->
+                    <div class="d-inline-flex align-items-center bg-dark bg-opacity-75 p-1 rounded-pill border border-secondary shadow-sm me-1" id="langSelectorBox">
+                        <span class="x-small text-light opacity-75 px-2" style="font-size: 0.75rem;"><i class="fa-solid fa-globe me-1"></i><span data-i18n="lang_label">語言</span>:</span>
+                        <button type="button" class="btn btn-sm rounded-pill lang-btn active" id="btnLangZh" onclick="setLanguage('zh')">繁中</button>
+                        <button type="button" class="btn btn-sm rounded-pill lang-btn" id="btnLangEn" onclick="setLanguage('en')">EN</button>
+                        <button type="button" class="btn btn-sm rounded-pill lang-btn" id="btnLangJa" onclick="setLanguage('ja')">日本語</button>
+                    </div>
+
+                    <a href="backtest.html" class="btn btn-warning rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm" data-i18n="btn_backtest">
+                        <i class="fa-solid fa-flask-vial me-1"></i>歷史回測實驗室 (含息比對)
+                    </a>
+                    <button class="btn btn-outline-warning rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm" onclick="resetToOfficialPortfolio()" data-i18n="btn_reset">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i>重設/同步最新部位 (150萬)
+                    </button>
+                    <button class="btn btn-outline-light rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm" onclick="syncAllLiveQuotes()" data-i18n="btn_sync">
+                        <i class="fa-solid fa-chart-line me-1"></i>同步全市場行情
+                    </button>
+                    <button class="btn btn-light rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm text-primary" onclick="openAddStockModal()" data-i18n="btn_add">
+                        <i class="fa-solid fa-plus me-1"></i>新增追蹤股票
+                    </button>
+                    <button class="btn btn-outline-light rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm" onclick="copyShareableUrl()" data-i18n="btn_share">
+                        <i class="fa-solid fa-share-nodes me-1"></i>分享給李老師
+                    </button>
+                    <a id="lineShareTopBtn" href="#" target="_blank" class="btn btn-share-line rounded-pill px-3 py-2 btn-sm shadow-sm" data-i18n="btn_line">
+                        <i class="fa-brands fa-line me-1"></i>LINE 分享戰報
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-4">
+
+        <!-- 操盤週期切換導航 (日K短波段 vs 週K長波段) -->
+        <div class="timeframe-nav-box mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="small fw-bold text-dark d-none d-sm-inline" data-i18n="timeframe_view"><i class="fa-solid fa-layer-group text-primary me-1"></i>操盤視角：</span>
+                <div class="p-1 bg-light rounded-pill border d-inline-flex">
+                    <button type="button" id="tabModeDaily" class="btn btn-sm btn-timeframe active" onclick="switchTimeframe('daily')" data-i18n="btn_daily">
+                        <i class="fa-solid fa-calendar-day me-1"></i>日K 短波段操作 (每日盯盤)
+                    </button>
+                    <button type="button" id="tabModeWeekly" class="btn btn-sm btn-timeframe" onclick="switchTimeframe('weekly')" data-i18n="btn_weekly">
+                        <i class="fa-solid fa-calendar-week me-1"></i>週K 長波段操作 (每週下一單)
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge px-3 py-2 fs-6 rounded-pill" id="timeframeBadge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+                    <i class="fa-solid fa-bolt me-1"></i>目前檢視：日K短波段
+                </span>
+                <span class="small text-muted d-none d-md-inline" id="timeframeSubtext">
+                    依「過昨高加碼、破昨低減碼」每日即時決策
+                </span>
+            </div>
+        </div>
+
+        <!-- 總資金預算與停泊資金控制中心 -->
+        <section class="capital-ctrl-box mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 border-bottom border-secondary pb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1 text-white" data-i18n="capital_center_title"><i class="fa-solid fa-wallet text-warning me-2"></i>總資金預算與停泊資金控制中心</h2>
+                    <span class="small text-light opacity-75" data-i18n="capital_center_sub">隨時增減可投入總本金，系統自動計算留倉總市值、預估利潤、實現獲利累計與額外加碼建議金額！</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small text-light opacity-75" data-i18n="usd_rate">USD 匯率：</label>
+                    <input type="number" id="inputUsdRate" class="form-control form-control-sm text-center fw-bold bg-dark text-white border-secondary" style="width: 80px;" value="32.5" step="0.1" onchange="updateUsdRate()">
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-lg-5">
+                    <label class="small text-light opacity-90 fw-bold mb-1" data-i18n="capital_input_label"><i class="fa-solid fa-coins text-warning me-1"></i>預計可投入總資金預算 (NTD)：</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark text-warning border-secondary fw-bold">NT$</span>
+                        <input type="number" id="inputTotalCapital" class="form-control form-control-lg bg-dark text-white border-secondary fw-bold fs-4" value="1500000" step="50000" onchange="onTotalCapitalChange()">
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <label class="small text-light opacity-90 fw-bold mb-1" data-i18n="capital_quick_label">快捷增減資金 / 預設規模切換：</label>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button class="btn btn-sm btn-outline-warning rounded-pill px-2" onclick="adjustCapital(500000)">+50萬</button>
+                        <button class="btn btn-sm btn-outline-warning rounded-pill px-2" onclick="adjustCapital(200000)">+20萬</button>
+                        <button class="btn btn-sm btn-outline-warning rounded-pill px-2" onclick="adjustCapital(100000)">+10萬</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-2" onclick="adjustCapital(-100000)">-10萬</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-2" onclick="adjustCapital(-200000)">-20萬</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-2" onclick="adjustCapital(-500000)">-50萬</button>
+                        <span class="vr bg-secondary mx-1"></span>
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-2" onclick="setCapital(500000)">50萬</button>
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-2" onclick="setCapital(1000000)">100萬</button>
+                        <button class="btn btn-sm btn-outline-warning rounded-pill px-2 fw-bold" onclick="setCapital(1500000)">150萬 (範例)</button>
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-2" onclick="setCapital(2000000)">200萬</button>
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-2" onclick="setCapital(5000000)">500萬</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 大關鍵財務指標卡片 -->
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-light opacity-75 small fw-bold" data-i18n="kpi_total_cap"><i class="fa-solid fa-piggy-bank text-warning me-1"></i>預計可投入總資金</div>
+                        <div class="h4 fw-bold text-warning mb-0 mt-1" id="kpiTotalCapital">NT$ 1,500,000</div>
+                        <span class="x-small text-light opacity-60" style="font-size: 0.75rem;" data-i18n="kpi_total_cap_sub">總本金預算</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-light opacity-75 small fw-bold" data-i18n="kpi_market_val"><i class="fa-solid fa-chart-pie text-info me-1"></i>目前持股總價值</div>
+                        <div class="h4 fw-bold text-white mb-0 mt-1" id="kpiMarketValue">NT$ 0</div>
+                        <span class="x-small text-info fw-bold" id="kpiEquityRatio" style="font-size: 0.75rem;">資金水位 0.0%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-light opacity-75 small fw-bold" data-i18n="kpi_profit"><i class="fa-solid fa-trophy text-danger me-1"></i>預估利潤與投資成效</div>
+                        <div class="h4 fw-bold text-danger mb-0 mt-1" id="kpiUnrealizedProfit">+NT$ 0</div>
+                        <span class="x-small text-light opacity-80" id="kpiTotalRoi" style="font-size: 0.75rem;">整體報酬率 +0.00%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded-3" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35);">
+                        <div class="text-success small fw-bold" data-i18n="kpi_parked_cash"><i class="fa-solid fa-shield-halved me-1"></i>停泊資金 (可加碼餘額)</div>
+                        <div class="h4 fw-bold text-success mb-0 mt-1" id="kpiParkedCash">NT$ 1,500,000</div>
+                        <span class="x-small text-light opacity-80" id="kpiRealizedNote" style="font-size: 0.75rem;">含已實現獲利 NT$ 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 資產配置水位條 -->
+            <div class="mt-3">
+                <div class="d-flex justify-content-between small text-light opacity-90 mb-1">
+                    <span><span data-i18n="bar_equity_prefix">場內持股市值：</span><strong id="barEquityText">NT$ 0 (0.0%)</strong></span>
+                    <span><span data-i18n="bar_cash_prefix">手頭停泊可用現金：</span><strong class="text-success" id="barCashText">NT$ 1,500,000 (100.0%)</strong></span>
+                </div>
+                <div class="progress" style="height: 10px; background-color: rgba(255,255,255,0.2);">
+                    <div class="progress-bar bg-primary" id="barEquity" style="width: 0%;"></div>
+                    <div class="progress-bar bg-success" id="barCash" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- 動態調倉試算摘要 -->
+            <div class="mt-3 p-2 rounded-3" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small">
+                    <div>
+                        <span data-i18n="sum_today_title"><i class="fa-solid fa-lightbulb text-warning me-1"></i><strong>本日調倉資金變動試算：</strong></span>
+                        <span data-i18n="sum_add_label">加碼預計動用：</span><strong class="text-warning" id="sumAddCost">NT$ 0</strong> ｜ 
+                        <span data-i18n="sum_recover_label">減碼抽回至停泊資金：</span><strong class="text-danger" id="sumRecoverCash">NT$ 0</strong>
+                    </div>
+                    <div>
+                        <span data-i18n="sum_post_cash_label">執行後預估手頭停泊資金：</span><strong class="text-success fs-6" id="sumPostCash">NT$ 1,500,000</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 各標的投資比例配置與應建倉/加碼/停泊金額試算盤 (Portfolio Allocation Hub) -->
+        <section class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" id="allocationControlCard">
+            <div class="card-header bg-dark text-white p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-warning text-dark px-2 py-1 fw-bold" data-i18n="alloc_hub_badge"><i class="fa-solid fa-sliders me-1"></i>資產配置中樞</span>
+                    <h2 class="h5 fw-bold mb-0 text-white" data-i18n="alloc_hub_title">各投資選項自訂配置比例 ＆ 應建倉／加碼／停泊金額自動試算盤</h2>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge px-3 py-2 rounded-pill fs-6" id="totalAllocationBadge" style="background:#1e293b; border: 1px solid #475569;">
+                        配置比例合計：100%
+                    </span>
+                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold" onclick="resetDefaultAllocations()" data-i18n="alloc_restore_btn">
+                        <i class="fa-solid fa-rotate-left me-1"></i>還原預設比例 (40/20/20/10/10)
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-4 bg-light">
+                <div class="row g-3 mb-3">
+                    <div class="col-lg-6">
+                        <div class="p-3 bg-white rounded-3 border h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="small fw-bold text-dark mb-0" data-i18n="alloc_custom_cap_label"><i class="fa-solid fa-wallet text-warning me-1"></i>自填可投入總本金預算：</label>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill py-0 px-2" style="font-size:0.75rem;" onclick="setCapital(1000000)">100萬</button>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill py-0 px-2 active fw-bold" style="font-size:0.75rem;" onclick="setCapital(1500000)">150萬 (範例)</button>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill py-0 px-2" style="font-size:0.75rem;" onclick="setCapital(2000000)">200萬</button>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light fw-bold text-primary">NT$</span>
+                                <input type="number" id="inputAllocTotalCapital" class="form-control form-control-lg fw-bold text-dark fs-4" value="1500000" step="50000" oninput="onAllocTotalCapitalInput(this.value)">
+                            </div>
+                            <div class="x-small text-muted mt-2" data-i18n="alloc_cap_hint">
+                                💡 隨時自填總資金（例如 150 萬），下方各投資選項將自動依欲投資比例 (%) 試算「分配預算」、「40%應建倉金額」與「加碼/停泊金額」！
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-3 bg-white rounded-3 border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small fw-bold text-dark" data-i18n="alloc_summary_label"><i class="fa-solid fa-chart-pie text-info me-1"></i>資金配置分配總覽：</span>
+                                    <span class="small fw-bold text-primary" id="allocProgressText">已配置 100% / 總資金 NT$ 1,500,000</span>
+                                </div>
+                                <div class="progress" style="height: 18px; border-radius: 9px;" id="allocMultiProgressBar">
+                                    <!-- 各股票彩條 -->
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 pt-2 border-top mt-2 x-small text-muted" id="allocLegendBox">
+                                <!-- 圖例 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 各股票配置明細與即時輸入表格 -->
+                <div class="table-responsive rounded-3 border bg-white shadow-sm mb-3">
+                    <table class="table table-hover align-middle mb-0 alloc-table" style="font-size: 0.875rem;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 140px;" data-i18n="alloc_th_asset">投資選項 (標的)</th>
+                                <th style="min-width: 110px;" data-i18n="alloc_th_ratio">欲投資比例</th>
+                                <th style="min-width: 120px;" data-i18n="alloc_th_budget">分配總預算</th>
+                                <th style="min-width: 140px;" data-i18n="alloc_th_base">應建倉金額 (40%底倉)</th>
+                                <th style="min-width: 140px;" data-i18n="alloc_th_dynamic">可加碼金額 (60%動態)</th>
+                                <th style="min-width: 120px;" data-i18n="alloc_th_holding">目前持有股數</th>
+                                <th style="min-width: 115px;" data-i18n="alloc_th_cost">平均購入價位</th>
+                                <th style="min-width: 120px;" data-i18n="alloc_th_market_val">留倉總市值</th>
+                                <th style="min-width: 120px;" data-i18n="alloc_th_roi">報酬率 (獲利)</th>
+                                <th style="min-width: 130px;" data-i18n="alloc_th_parked">停泊金額 (未動用)</th>
+                                <th style="min-width: 250px;" data-i18n="alloc_th_sop">SOP 投資建議與診斷指令</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allocationTableBody">
+                            <!-- 由 JavaScript 動態渲染每檔股票的配置行 -->
+                        </tbody>
+                        <tfoot class="table-light fw-bold" id="allocationTableFooter">
+                            <!-- 合計行 -->
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+                    <div data-i18n="alloc_rule_note">
+                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                        <strong>李長坤波段法量化法則：</strong>
+                        40% 應建倉金額為長線護城河底倉（拉回絕對不賣）；60% 為動態加碼倉，突破過昨高順勢進場加碼，跌破昨低立即砍半加碼部位，抽回資金歸入停泊金額！
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="openAddStockModal()" data-i18n="alloc_add_btn">
+                            <i class="fa-solid fa-plus me-1"></i>新增其他投資選項
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 大盤趨勢環境檢驗與防慌亂定海神針卡片 -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+            <div class="card-body p-4 text-white">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark px-2 py-1 fw-bold" data-i18n="market_regime_badge"><i class="fa-solid fa-shield-heart me-1"></i>大盤環境濾網</span>
+                        <h2 class="h5 fw-bold mb-0 text-white" data-i18n="market_regime_title">大盤整體趨勢檢驗 ＆ 防崩盤慌亂定海神針</h2>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fs-6" id="marketRegimeBadge">
+                            <i class="fa-solid fa-compass me-1"></i>大盤趨勢：高檔震盪／短線回檔 (抽回加碼，守護底倉)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- 台股加權指數 -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12);">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="badge bg-primary px-2 py-1 small me-1" data-i18n="tw_market_badge">台股大盤</span>
+                                    <strong class="fs-6 text-white">加權指數 (^TWII)</strong>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill small" id="twMarketStatus">守住昨低未破 (高檔震盪)</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <div>
+                                    <span class="h4 fw-bold text-white mb-0" id="twIndexPrice">49,806.37</span>
+                                    <span class="small ms-2 fw-bold text-danger" id="twIndexChg">-16.18 (-0.03%)</span>
+                                </div>
+                                <div class="text-end small text-light opacity-75">
+                                    昨低: 49,479.69 ｜ 今低: 49,567.52<br>
+                                    昨高: 49,968.92 ｜ 今高: 49,966.89
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 美股標普500 -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12);">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="badge bg-info text-dark px-2 py-1 small me-1" data-i18n="us_market_badge">美股大盤</span>
+                                    <strong class="fs-6 text-white">標普500 指數 (SPX / SPY)</strong>
+                                </div>
+                                <span class="badge bg-danger rounded-pill small" id="usMarketStatus">跌破昨低拉回</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <div>
+                                    <span class="h4 fw-bold text-white mb-0" id="usIndexPrice">774.47</span>
+                                    <span class="small ms-2 fw-bold text-danger" id="usIndexChg">-4.62 (-0.59%)</span>
+                                </div>
+                                <div class="text-end small text-light opacity-75">
+                                    昨低: 777.96 ｜ 今低: 774.25<br>
+                                    昨高: 781.62 ｜ 今高: 776.15
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 李老師「避免崩盤慌亂亂賣」心法防線 -->
+                <div class="p-3 rounded-3" id="panicGuideBox" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35);">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa-solid fa-shield-virus text-warning fs-5"></i>
+                        <strong class="text-white fs-6">李老師定海神針：面對大盤拉回或大跌，如何避免恐慌亂賣？</strong>
+                    </div>
+                    <div class="row g-2 small text-light opacity-90">
+                        <div class="col-md-4">
+                            <div class="p-2 rounded" style="background: rgba(0,0,0,0.2);">
+                                <span class="text-warning fw-bold">① 為何你不會受重傷？</span><br>
+                                當個股在破昨低的第一時間，系統早已執行「加碼倉砍半」，抽回本金與利潤至停泊資金，高檔已先落袋為安！
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 rounded" style="background: rgba(0,0,0,0.2);">
+                                <span class="text-danger fw-bold">② 40% 基本倉「絕對不准賣」！</span><br>
+                                崩盤重挫時往往是融資多殺多的極端低點，盲目全砍必殺在阿呆谷！40% 是穿越牛熊的波段種子，牢牢抱緊！
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 rounded" style="background: rgba(0,0,0,0.2);">
+                                <span class="text-success fw-bold">③ 靜待底部「黑轉紅過昨高」</span><br>
+                                不要下殺接刀，握緊加碼倉砍半抽回的停泊資金，等到出現「第一根黑轉紅過昨高」，再大膽加倍買回！
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 標的清單動態卡片區 -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 fw-bold text-dark mb-0">
+                <i class="fa-solid fa-layer-group text-primary me-2"></i>即時追蹤標的、個股總價值、成效 ＆ 加減碼決策表
+            </h3>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="resetToDefault()">
+                    <i class="fa-solid fa-rotate-left me-1"></i>還原預設 (00981A, 2330 & SPY)
+                </button>
+            </div>
+        </div>
+
+        <div id="stockCardsContainer" class="row g-4 mb-5">
+            <!-- 由 JavaScript 動態渲染每一檔股票卡片 -->
+        </div>
+
+        <!-- 李長坤老師操盤心法精華速查卡 (支援日K盯盤與週K每週下單切換) -->
+        <div id="teachingCardBox" class="teaching-card mb-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="p-2 bg-primary text-white rounded-3 me-3" id="teachingCardIcon">
+                    <i class="fa-solid fa-chalkboard-user fa-lg"></i>
+                </div>
+                <div>
+                    <h3 class="h5 fw-bold mb-0 text-dark" id="teachingCardTitle">李長坤老師操盤心法精華 SOP 核心速查（日K短波段）</h3>
+                    <span class="text-muted small" id="teachingCardSub">「不管上衝下洗，只要把部位拆解為基本倉與動態調整單，最後都會獲利。」</span>
+                </div>
+            </div>
+
+            <div class="row g-3" id="teachingCardContent">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 h-100 border">
+                        <h4 class="h6 fw-bold text-primary mb-2">
+                            <i class="fa-solid fa-shield-halved me-1"></i> 1. 40% 基本防守倉（底倉）
+                        </h4>
+                        <ul class="small text-secondary ps-3 mb-0">
+                            <li><strong>長線護城河</strong>：波段拉回<strong>絕對不賣出</strong>！避免被主力甩轎。</li>
+                            <li><strong>紅K建倉</strong>：若從零開始，只在「紅K」進場（黑K不動）。</li>
+                            <li><strong>8% 階梯</strong>：第一筆 8%，第二筆 16%，第三筆 32%... 一直買到 40% 為止。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 h-100 border">
+                        <h4 class="h6 fw-bold text-success mb-2">
+                            <i class="fa-solid fa-arrow-trend-up me-1"></i> 2. 60% 動態倉（向上加碼）
+                        </h4>
+                        <ul class="small text-secondary ps-3 mb-0">
+                            <li><strong>慣性起點</strong>：<strong>當天盤中突破過昨高即可</strong>（或黑轉紅過昨高），向上連續性確立，不錯失向上進場機會！</li>
+                            <li><strong>試水溫</strong>：第一筆動態單為 8% 試單。</li>
+                            <li><strong>倍增加碼</strong>：方向正確、每天向上過昨高，每天加碼一倍，一路加到 100% 滿倉。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 h-100 border">
+                        <h4 class="h6 fw-bold text-danger mb-2">
+                            <i class="fa-solid fa-arrow-trend-down me-1"></i> 3. 向下破昨低（砍半減碼）
+                        </h4>
+                        <ul class="small text-secondary ps-3 mb-0">
+                            <li><strong>減碼訊號</strong>：一旦跌破昨日低點，立即判定短線轉弱。</li>
+                            <li><strong>砍半規則</strong>：<strong>加碼倉（折溢部位）立刻賣出一半 (50%)</strong>！</li>
+                            <li><strong>實現獲利入帳</strong>：抽回本金與利潤，自動累計至「停泊資金」，等待下次過高加碼！</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-white border-top py-4 mt-5">
+        <div class="container text-center text-muted small">
+            <p class="mb-1">波段慣性操盤系統 — 遵循李長坤老師「40%基本倉、60%動態調倉」量化策略</p>
+            <p class="mb-0 text-secondary" style="font-size: 0.8rem;">
+                免責聲明：本工具僅供教學研究與個人策略輔助紀錄，不構成任何投資建議。投資交易請審慎評估風險。
+            </p>
+        </div>
+    </footer>
+
+    <!-- 新增 / 編輯股票 Modal -->
+    <div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white p-3">
+                    <h5 class="modal-title fw-bold" id="stockModalLabel">
+                        <i class="fa-solid fa-pen-to-square me-2"></i>設定追蹤股票、成本與倉位
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <form id="stockForm">
+                        <input type="hidden" id="editStockId">
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">股票代號 <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control fw-bold" id="inputSymbol" placeholder="例如: 2330" required>
+                                    <button class="btn btn-outline-primary btn-sm" type="button" onclick="fetchQuoteInModal()">
+                                        <i class="fa-solid fa-magnifying-glass me-1"></i>搜尋
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">股票名稱 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="inputName" placeholder="例如: 台積電" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">市場別</label>
+                                <select class="form-select" id="inputMarket">
+                                    <option value="TW">台股 (張 / NTD)</option>
+                                    <option value="US">美股 (股 / USD)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 成本價與已實現利潤 -->
+                        <div class="row g-3 mb-3 p-3 bg-white rounded-3 border">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-primary"><i class="fa-solid fa-hand-holding-dollar me-1"></i>平均買入成本價 (每股/每張)</label>
+                                <input type="number" step="0.01" class="form-control fw-bold" id="inputCostPrice" placeholder="例如: 2350.0">
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">用以計算未實現利潤與投資報酬率 %</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-success"><i class="fa-solid fa-circle-check me-1"></i>累計已實現獲利 (NTD)</label>
+                                <input type="number" step="100" class="form-control fw-bold text-success" id="inputRealizedProfit" placeholder="例如: 235000">
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">過去減碼獲利，將計入可加碼停泊資金</span>
+                            </div>
+                        </div>
+
+                        <!-- 倉位目標與配置比例設定 -->
+                        <div class="row g-3 mb-3 p-3 bg-white rounded-3 border">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-primary"><i class="fa-solid fa-percent me-1"></i>欲投資比例 (%)</label>
+                                <input type="number" class="form-control fw-bold text-primary" id="inputAllocationRatio" value="20" min="0" max="100" required>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">佔總資金分配比重</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">目標滿倉股數 (100%)</label>
+                                <input type="number" class="form-control" id="inputTargetFull" placeholder="10000" required>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">台股 10張 = 10000 股</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">目前實際持股 (股)</label>
+                                <input type="number" class="form-control" id="inputCurrentHolding" placeholder="6000" required>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">台股 6張 = 6000 股</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">基本倉比例 (%)</label>
+                                <input type="number" class="form-control" id="inputBaseRatio" value="40" min="10" max="90" required>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">波段底倉標準為 40%</span>
+                            </div>
+                        </div>
+
+                        <!-- 價位與K棒參數 -->
+                        <div class="p-3 bg-white rounded-3 border mb-3">
+                            <div class="fw-bold small text-dark mb-2"><i class="fa-solid fa-chart-candlestick text-primary me-1"></i>今日與昨日價位 (自動搜尋或手動校對)：</div>
+                            <div class="row g-2">
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label x-small text-muted mb-0">今日收盤/現價</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm fw-bold text-primary" id="inputClose" required>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label x-small text-muted mb-0">今日開盤價</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputOpen" required>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label x-small text-muted mb-0">今日最高價</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputHigh" required>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label x-small text-muted mb-0">今日最低價</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputLow" required>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <label class="form-label x-small text-muted mb-0">昨日最高價 (過高線)</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputPrevHigh" required>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <label class="form-label x-small text-muted mb-0">昨日最低價 (破低線)</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputPrevLow" required>
+                                </div>
+                                <div class="col-md-4 col-12">
+                                    <label class="form-label x-small text-muted mb-0">昨日收盤價</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" id="inputPrevClose">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4 me-2" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                                <i class="fa-solid fa-floppy-disk me-1"></i>儲存並重新試算
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 核心策略演算法與資料庫邏輯 -->
+    <script>
+        let totalCapital = 1500000;
+        let usdExchangeRate = 32.5;
+        let currentTimeframe = 'daily'; // 'daily' (日K短波段) 或 'weekly' (週K長波段)
+
+        // 預設股票資料集（已精準同步真實部位與資產配置比例：台積電40%、SPY 20%、00981A 20%、主動ETF 20%）
+        const DEFAULT_STOCKS = [
+            {
+                id: "2330",
+                symbol: "2330",
+                name: "台積電",
+                market: "TW",
+                allocationRatio: 40,
+                unitName: "股",
+                sharesPerUnit: 1,
+                costPrice: 2560.0,
+                realizedProfit: 0,
+                targetFullShares: 500,
+                currentHoldingShares: 91,
+                baseRatio: 0.40,
+                open: 2550.0,
+                high: 2550.0,
+                low: 2510.0,
+                close: 2540.0,
+                prevHigh: 2575.0,
+                prevLow: 2550.0,
+                prevClose: 2550.0,
+                date: "2026-10-12",
+                weekly: {
+                    open: 2550.0,
+                    high: 2550.0,
+                    low: 2510.0,
+                    close: 2540.0,
+                    prevHigh: 2550.0,
+                    prevLow: 2510.0,
+                    prevClose: 2550.0
+                }
+            },
+            {
+                id: "SPY",
+                symbol: "SPY",
+                name: "SPDR 標普500 ETF",
+                market: "US",
+                allocationRatio: 20,
+                unitName: "股",
+                sharesPerUnit: 1,
+                costPrice: 770.0,
+                realizedProfit: 0,
+                targetFullShares: 20,
+                currentHoldingShares: 3,
+                baseRatio: 0.40,
+                open: 775.50,
+                high: 779.42,
+                low: 775.14,
+                close: 778.57,
+                prevHigh: 777.09,
+                prevLow: 770.44,
+                prevClose: 777.09,
+                date: "2026-10-12",
+                weekly: {
+                    open: 775.50,
+                    high: 779.42,
+                    low: 775.14,
+                    close: 778.57,
+                    prevHigh: 781.62,
+                    prevLow: 769.63,
+                    prevClose: 778.57
+                }
+            },
+            {
+                id: "00981A",
+                symbol: "00981A",
+                name: "主動統一台股增長",
+                market: "TW",
+                allocationRatio: 20,
+                unitName: "張",
+                sharesPerUnit: 1000,
+                costPrice: 32.26,
+                realizedProfit: 0,
+                targetFullShares: 10000,
+                currentHoldingShares: 1000,
+                baseRatio: 0.40,
+                open: 32.24,
+                high: 32.35,
+                low: 31.75,
+                close: 32.30,
+                prevHigh: 32.28,
+                prevLow: 31.73,
+                prevClose: 32.24,
+                date: "2026-10-12",
+                weekly: {
+                    open: 32.24,
+                    high: 32.35,
+                    low: 31.75,
+                    close: 32.30,
+                    prevHigh: 32.35,
+                    prevLow: 31.75,
+                    prevClose: 32.24
+                }
+            },
+            {
+                id: "00982A",
+                symbol: "00982A",
+                name: "主動群益台灣強棒",
+                market: "TW",
+                allocationRatio: 10,
+                unitName: "張",
+                sharesPerUnit: 1000,
+                costPrice: 24.29,
+                realizedProfit: 0,
+                targetFullShares: 10000,
+                currentHoldingShares: 0,
+                baseRatio: 0.40,
+                open: 24.25,
+                high: 24.32,
+                low: 23.96,
+                close: 24.29,
+                prevHigh: 24.28,
+                prevLow: 23.95,
+                prevClose: 24.25,
+                date: "2026-10-12",
+                weekly: {
+                    open: 24.25,
+                    high: 24.32,
+                    low: 23.96,
+                    close: 24.29,
+                    prevHigh: 24.32,
+                    prevLow: 23.96,
+                    prevClose: 24.25
+                }
+            },
+            {
+                id: "00992A",
+                symbol: "00992A",
+                name: "主動群益科技創新",
+                market: "TW",
+                allocationRatio: 10,
+                unitName: "張",
+                sharesPerUnit: 1000,
+                costPrice: 20.14,
+                realizedProfit: 0,
+                targetFullShares: 10000,
+                currentHoldingShares: 0,
+                baseRatio: 0.40,
+                open: 20.00,
+                high: 20.15,
+                low: 19.73,
+                close: 20.14,
+                prevHigh: 20.10,
+                prevLow: 19.70,
+                prevClose: 20.01,
+                date: "2026-10-12",
+                weekly: {
+                    open: 20.00,
+                    high: 20.15,
+                    low: 19.73,
+                    close: 20.14,
+                    prevHigh: 20.15,
+                    prevLow: 19.73,
+                    prevClose: 20.01
+                }
+            }
+        ];
+
+        let stockList = [];
+        let stockModalInstance = null;
+
+        const CURRENT_PORTFOLIO_VERSION = "20261013_ALLOC_V2";
+
+        // 切換操盤週期 (日K vs 週K)
+        function switchTimeframe(tf) {
+            currentTimeframe = tf;
+            const btnDaily = document.getElementById('tabModeDaily');
+            const btnWeekly = document.getElementById('tabModeWeekly');
+            const badge = document.getElementById('timeframeBadge');
+            const subtext = document.getElementById('timeframeSubtext');
+
+            if (tf === 'weekly') {
+                btnDaily.classList.remove('active');
+                btnWeekly.classList.add('active');
+                badge.innerHTML = '<i class="fa-solid fa-calendar-week me-1"></i>目前檢視：週K長波段';
+                badge.style.backgroundColor = '#fdf2f8';
+                badge.style.color = '#db2777';
+                badge.style.borderColor = '#fbcfe8';
+                subtext.innerText = '每週下單一次（第二週高過前週高加碼、破前週低減碼，40%底倉防守不賣）';
+            } else {
+                btnWeekly.classList.remove('active');
+                btnDaily.classList.add('active');
+                badge.innerHTML = '<i class="fa-solid fa-bolt me-1"></i>目前檢視：日K短波段';
+                badge.style.backgroundColor = '#eff6ff';
+                badge.style.color = '#1d4ed8';
+                badge.style.borderColor = '#bfdbfe';
+                subtext.innerText = '依「過昨高加碼、破昨低減碼」每日即時決策';
+            }
+            renderDashboard();
+            updateTeachingCard();
+        }
+
+        // 動態切換心法卡內容 (日K vs 週K)
+        function updateTeachingCard() {
+            const isWeekly = (currentTimeframe === 'weekly');
+            const titleEl = document.getElementById('teachingCardTitle');
+            const subEl = document.getElementById('teachingCardSub');
+            const iconEl = document.getElementById('teachingCardIcon');
+            const contentEl = document.getElementById('teachingCardContent');
+
+            if (!titleEl || !contentEl) return;
+
+            if (isWeekly) {
+                titleEl.innerText = "李長坤老師操盤心法精華 SOP 核心速查（週K長波段 — 每週下一單）";
+                subEl.innerText = "「大格局波段看週K，每週只要做一次決策，40%底倉雷打不動，過前週高順勢加碼，破前週低砍半加碼倉！」";
+                iconEl.className = "p-2 bg-warning text-dark rounded-3 me-3";
+                iconEl.innerHTML = '<i class="fa-solid fa-calendar-check fa-lg"></i>';
+
+                contentEl.innerHTML = `
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-primary mb-2">
+                                <i class="fa-solid fa-shield-halved me-1"></i> 1. 40% 週K基本防守倉（底倉）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>長線護城河</strong>：不管平日如何劇烈震盪，<strong>拉回絕對不賣出</strong>！</li>
+                                <li><strong>波段種子</strong>：牢牢抱緊 40% 底倉，免除每日看盤盯盤的心力損耗與洗盤焦慮。</li>
+                                <li><strong>紅K進場</strong>：週K收紅且站穩時建置底倉，買好買滿 40% 即可停手。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-success mb-2">
+                                <i class="fa-solid fa-arrow-trend-up me-1"></i> 2. 週K向上加碼（過前週高點）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>加碼條件</strong>：<strong>第二週K棒高點超過前一週K最高點</strong>，週波段向上慣性確立！</li>
+                                <li><strong>每週下單一次</strong>：每週只須在週五收盤前或週一開盤執行一次加碼，不必天天追高殺低。</li>
+                                <li><strong>動態推進</strong>：持續過前週高就順勢加碼，一路累積部位至 100% 滿倉。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-danger mb-2">
+                                <i class="fa-solid fa-arrow-trend-down me-1"></i> 3. 週K向下減碼（破前週低點）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>減碼條件</strong>：<strong>這週K棒最低點跌破前一週K棒最低點</strong>，週線轉弱回檔！</li>
+                                <li><strong>加碼倉砍半</strong>：<strong>僅賣出加碼倉（折溢部位）的 50%</strong>，鎖住大波段獲利！</li>
+                                <li><strong>底倉防守</strong>：40% 基本倉依然堅決不賣，賣出抽回的資金全部歸入停泊資金，靜待下一次週K轉強！</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            } else {
+                titleEl.innerText = "李長坤老師操盤心法精華 SOP 核心速查（日K短波段）";
+                subEl.innerText = "「不管上衝下洗，只要把部位拆解為基本倉與動態調整單，最後都會獲利。」";
+                iconEl.className = "p-2 bg-primary text-white rounded-3 me-3";
+                iconEl.innerHTML = '<i class="fa-solid fa-chalkboard-user fa-lg"></i>';
+
+                contentEl.innerHTML = `
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-primary mb-2">
+                                <i class="fa-solid fa-shield-halved me-1"></i> 1. 40% 基本防守倉（底倉）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>長線護城河</strong>：波段拉回<strong>絕對不賣出</strong>！避免被主力甩轎。</li>
+                                <li><strong>紅K建倉</strong>：若從零開始，只在「紅K」進場（黑K不動）。</li>
+                                <li><strong>8% 階梯</strong>：第一筆 8%，第二筆 16%，第三筆 32%... 一直買到 40% 為止。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-success mb-2">
+                                <i class="fa-solid fa-arrow-trend-up me-1"></i> 2. 60% 動態倉（向上加碼）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>慣性起點</strong>：<strong>當天盤中突破過昨高即可</strong>（或黑轉紅過昨高），向上連續性確立，不錯失向上進場機會！</li>
+                                <li><strong>試水溫</strong>：第一筆動態單為 8% 試單。</li>
+                                <li><strong>倍增加碼</strong>：方向正確、每天向上過昨高，每天加碼一倍，一路加到 100% 滿倉。</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h4 class="h6 fw-bold text-danger mb-2">
+                                <i class="fa-solid fa-arrow-trend-down me-1"></i> 3. 向下破昨低（砍半減碼）
+                            </h4>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>減碼訊號</strong>：一旦跌破昨日低點，立即判定短線轉弱。</li>
+                                <li><strong>砍半規則</strong>：<strong>加碼倉（折溢部位）立刻賣出一半 (50%)</strong>！</li>
+                                <li><strong>實現獲利入帳</strong>：抽回本金與利潤，自動累計至「停泊資金」，等待下次過高加碼！</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 載入資料
+        function loadPortfolioFromStorageOrUrl() {
+            try {
+                const hash = window.location.hash;
+                if (hash && hash.startsWith('#data=')) {
+                    const encoded = hash.substring(6);
+                    const decoded = decodeURIComponent(atob(encoded));
+                    const payload = JSON.parse(decoded);
+                    if (payload.stocks && Array.isArray(payload.stocks)) {
+                        stockList = payload.stocks;
+                        totalCapital = payload.totalCapital || totalCapital;
+                        usdExchangeRate = payload.usdRate || usdExchangeRate;
+                        saveToStorage();
+                        return;
+                    } else if (Array.isArray(payload)) {
+                        stockList = payload;
+                        saveToStorage();
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("URL Hash 解碼異常:", e);
+            }
+
+            // 版本檢查：若為舊版本快取，自動重設為 150 萬資產配置最新真實戰報
+            const storedVersion = localStorage.getItem('tina_portfolio_version');
+            if (storedVersion !== CURRENT_PORTFOLIO_VERSION) {
+                stockList = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+                totalCapital = 1500000;
+                usdExchangeRate = 32.5;
+                localStorage.setItem('tina_portfolio_version', CURRENT_PORTFOLIO_VERSION);
+                saveToStorage();
+                return;
+            }
+
+            const storedCap = localStorage.getItem('user_total_capital');
+            if (storedCap) totalCapital = parseFloat(storedCap) || totalCapital;
+
+            const storedRate = localStorage.getItem('user_usd_rate');
+            if (storedRate) usdExchangeRate = parseFloat(storedRate) || usdExchangeRate;
+
+            const stored = localStorage.getItem('user_inertia_stocks');
+            if (stored) {
+                try {
+                    stockList = JSON.parse(stored);
+                } catch (e) {
+                    stockList = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+                }
+            } else {
+                stockList = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+            }
+        }
+
+        function resetToOfficialPortfolio() {
+            stockList = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+            totalCapital = 1500000;
+            usdExchangeRate = 32.5;
+            localStorage.setItem('tina_portfolio_version', CURRENT_PORTFOLIO_VERSION);
+            saveToStorage();
+            document.getElementById('inputTotalCapital').value = totalCapital;
+            if (document.getElementById('inputAllocTotalCapital')) document.getElementById('inputAllocTotalCapital').value = totalCapital;
+            document.getElementById('inputUsdRate').value = usdExchangeRate;
+            renderDashboard();
+            updateLineShareLink();
+            Swal.fire({
+                title: '已重設並同步！',
+                text: '已成功載入 150 萬總預算自訂配置：台積電40%、SPY 20%、00981A 20%、主動ETF 20% 與最新戰報！',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('user_inertia_stocks', JSON.stringify(stockList));
+            localStorage.setItem('user_total_capital', totalCapital.toString());
+            localStorage.setItem('user_usd_rate', usdExchangeRate.toString());
+        }
+
+        // 資金增減操作
+        function adjustCapital(delta) {
+            totalCapital = Math.max(100000, totalCapital + delta);
+            document.getElementById('inputTotalCapital').value = totalCapital;
+            if (document.getElementById('inputAllocTotalCapital')) document.getElementById('inputAllocTotalCapital').value = totalCapital;
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+        }
+
+        function setCapital(val) {
+            totalCapital = val;
+            document.getElementById('inputTotalCapital').value = totalCapital;
+            if (document.getElementById('inputAllocTotalCapital')) document.getElementById('inputAllocTotalCapital').value = totalCapital;
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+        }
+
+        function onTotalCapitalChange() {
+            const val = parseFloat(document.getElementById('inputTotalCapital').value) || totalCapital;
+            totalCapital = Math.max(100000, val);
+            if (document.getElementById('inputAllocTotalCapital')) document.getElementById('inputAllocTotalCapital').value = totalCapital;
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+        }
+
+        function updateUsdRate() {
+            const val = parseFloat(document.getElementById('inputUsdRate').value) || usdExchangeRate;
+            usdExchangeRate = Math.max(1, val);
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+        }
+
+        // 自動搜尋台股即時行情 (FinMind)
+        async function fetchTaiwanStockQuote(symbol) {
+            try {
+                const cleanSym = symbol.trim().toUpperCase().replace(".TW", "").replace(".TWO", "");
+                const today = new Date();
+                const tenDaysAgo = new Date(today.getTime() - 20 * 86400000).toISOString().split('T')[0];
+                const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${cleanSym}&start_date=${tenDaysAgo}`;
+                const resp = await fetch(url);
+                if (!resp.ok) return null;
+                const json = await resp.json();
+                const data = json.data || [];
+                if (data.length < 2) return null;
+                const prev = data[data.length - 2];
+                const curr = data[data.length - 1];
+                return {
+                    symbol: cleanSym,
+                    date: curr.date,
+                    close: parseFloat(curr.close),
+                    open: parseFloat(curr.open),
+                    high: parseFloat(curr.max),
+                    low: parseFloat(curr.min),
+                    prevHigh: parseFloat(prev.max),
+                    prevLow: parseFloat(prev.min),
+                    prevClose: parseFloat(prev.close)
+                };
+            } catch (e) {
+                console.error("fetch quote error:", e);
+                return null;
+            }
+        }
+
+        // Modal 搜尋
+        async function fetchQuoteInModal() {
+            const sym = document.getElementById('inputSymbol').value.trim();
+            if (!sym) {
+                Swal.fire('請輸入股票代號', '例如: 2330 或 00981A', 'info');
+                return;
+            }
+            Swal.fire({
+                title: `正在連線搜尋 ${sym} 最新即時行情...`,
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const quote = await fetchTaiwanStockQuote(sym);
+            if (quote) {
+                document.getElementById('inputClose').value = quote.close;
+                document.getElementById('inputOpen').value = quote.open;
+                document.getElementById('inputHigh').value = quote.high;
+                document.getElementById('inputLow').value = quote.low;
+                document.getElementById('inputPrevHigh').value = quote.prevHigh;
+                document.getElementById('inputPrevLow').value = quote.prevLow;
+                document.getElementById('inputPrevClose').value = quote.prevClose;
+                if (sym.includes("2330")) {
+                    document.getElementById('inputName').value = "台積電";
+                    document.getElementById('inputCostPrice').value = 2350.0;
+                }
+                if (sym.includes("00981A")) {
+                    document.getElementById('inputName').value = "主動統一台股增長";
+                    document.getElementById('inputCostPrice').value = 28.50;
+                }
+
+                Swal.fire({
+                    title: '行情搜尋成功！',
+                    html: `<strong>${sym}</strong> 最新收盤價：<span class="text-danger fw-bold fs-5">${quote.close.toLocaleString()}</span> 元<br>昨高 ${quote.prevHigh} ｜ 昨低 ${quote.prevLow}`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire('未能取得即時報價', '請手動輸入價位或檢查股票代號。', 'warning');
+            }
+        }
+
+        // 一鍵同步全市場最新即時股價
+        async function syncAllLiveQuotes() {
+            Swal.fire({
+                title: '正在自動搜尋並更新所有股票即時行情...',
+                text: '連線官方即時數據庫更新中...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            let updatedCount = 0;
+            for (let i = 0; i < stockList.length; i++) {
+                const s = stockList[i];
+                if (s.market === 'TW') {
+                    const quote = await fetchTaiwanStockQuote(s.symbol);
+                    if (quote) {
+                        stockList[i].close = quote.close;
+                        stockList[i].open = quote.open;
+                        stockList[i].high = quote.high;
+                        stockList[i].low = quote.low;
+                        stockList[i].prevHigh = quote.prevHigh;
+                        stockList[i].prevLow = quote.prevLow;
+                        stockList[i].prevClose = quote.prevClose;
+                        stockList[i].date = quote.date;
+                        updatedCount++;
+                    }
+                }
+            }
+
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+            Swal.fire({
+                title: '同步完成！',
+                text: `已成功即時更新 ${updatedCount} 檔股票最新報價，並完成資產淨值與停泊資金重新試算！`,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // 執行減碼並將獲利累計至停泊資金
+        function executeTrimAndRealize(index) {
+            const s = stockList[index];
+            const spu = s.sharesPerUnit || 1;
+            const unit = s.unitName || "張";
+            const baseShares = Math.floor(s.targetFullShares * (s.baseRatio || 0.40));
+            const premiumShares = Math.max(0, s.currentHoldingShares - baseShares);
+
+            if (premiumShares <= 0) {
+                Swal.fire('已是 40% 基本倉', '基本倉為波段護城河，依李老師紀律嚴禁賣出！', 'warning');
+                return;
+            }
+
+            const cutUnits = Math.max(1, Math.floor((premiumShares / spu) / 2));
+            const cutShares = cutUnits * spu;
+            const cost = s.costPrice || s.close;
+            const isUS = s.market === "US";
+            const mult = isUS ? usdExchangeRate : 1.0;
+
+            const recoveredCashTwd = cutShares * s.close * mult;
+            const gainTwd = cutShares * (s.close - cost) * mult;
+
+            Swal.fire({
+                title: `確定執行【${s.name}】加碼倉砍半？`,
+                html: `
+                    <div class="text-start p-3 bg-light rounded-3 border small">
+                        • 建議賣出：<strong class="text-danger">${cutUnits} ${unit}</strong> (${cutShares.toLocaleString()} 股)<br>
+                        • 抽回現金 (本金+獲利)：<strong class="text-success">NT$ ${Math.round(recoveredCashTwd).toLocaleString()}</strong><br>
+                        • 本次實現獲利：<strong class="${gainTwd >= 0 ? 'text-danger' : 'text-success'}">NT$ ${Math.round(gainTwd).toLocaleString()}</strong><br>
+                        • 減碼後留倉：<strong>${(s.currentHoldingShares - cutShares).toLocaleString()} 股</strong> (基本倉 ${(baseShares/spu).toFixed(1)} ${unit} + 剩餘加碼)<br><br>
+                        <span class="text-muted">點擊確定後，抽回的資金與實現獲利將自動全數累計至【停泊資金 (可加碼額度)】！</span>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '確定減碼入帳',
+                cancelButtonText: '取消'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    stockList[index].currentHoldingShares -= cutShares;
+                    stockList[index].realizedProfit = (stockList[index].realizedProfit || 0) + Math.round(gainTwd);
+                    saveToStorage();
+                    renderDashboard();
+                    updateLineShareLink();
+                    Swal.fire({
+                        title: '減碼入帳成功！',
+                        text: `已抽回 NT$ ${Math.round(recoveredCashTwd).toLocaleString()} 並入帳至手頭停泊資金。`,
+                        icon: 'success'
+                    });
+                }
+            });
+        }
+
+        // 李長坤策略核心分析 (支援日K每日盯盤 與 週K每週下一單)
+        function analyzeStock(s) {
+            const isTW = s.market === "TW";
+            const isUS = s.market === "US";
+            const mult = isUS ? usdExchangeRate : 1.0;
+            const isWeekly = (currentTimeframe === 'weekly');
+
+            // 依檢視週期動態取得 K 棒高低收數據
+            let open = s.open;
+            let high = s.high;
+            let low = s.low;
+            let close = s.close;
+            let prevHigh = s.prevHigh;
+            let prevLow = s.prevLow;
+            let prevClose = s.prevClose || s.close;
+
+            if (isWeekly && s.weekly) {
+                open = s.weekly.open ?? s.open;
+                high = s.weekly.high ?? s.high;
+                low = s.weekly.low ?? s.low;
+                close = s.weekly.close ?? s.close;
+                prevHigh = s.weekly.prevHigh ?? s.prevHigh;
+                prevLow = s.weekly.prevLow ?? s.prevLow;
+                prevClose = s.weekly.prevClose ?? s.prevClose ?? s.close;
+            }
+
+            const isRed = close >= open;
+            const isBlack = close < open;
+            const brokePrevLow = low < prevLow;
+            const passedPrevHigh = high > prevHigh;
+
+            const priceChange = close - prevClose;
+            const pctChange = prevClose ? (priceChange / prevClose) * 100 : 0;
+
+            const baseShares = Math.floor(s.targetFullShares * (s.baseRatio || 0.40));
+            const dynamicTargetShares = s.targetFullShares - baseShares;
+            const premiumShares = Math.max(0, s.currentHoldingShares - baseShares);
+            const holdingPct = s.targetFullShares > 0 ? (s.currentHoldingShares / s.targetFullShares) * 100 : 0;
+
+            const spu = s.sharesPerUnit || 1;
+            const unit = s.unitName || (isTW ? "張" : "股");
+
+            // 財務總價值與損益 (以最新現價計算)
+            const costPrice = s.costPrice || close;
+            const marketValueTwd = s.currentHoldingShares * close * mult;
+            const costValueTwd = s.currentHoldingShares * costPrice * mult;
+            const unrealizedProfitTwd = marketValueTwd - costValueTwd;
+            const roiPct = costPrice > 0 ? ((close - costPrice) / costPrice) * 100 : 0;
+            const realizedProfitTwd = s.realizedProfit || 0;
+
+            // 基本倉與加碼倉市值
+            const baseMarketValueTwd = baseShares * close * mult;
+            const premiumMarketValueTwd = premiumShares * close * mult;
+
+            let signalType = "WATCH";
+            let signalTitle = "";
+            let actionType = "";
+            let actionShares = 0;
+            let actionUnits = 0;
+            let remainShares = s.currentHoldingShares;
+            let actionDesc = "";
+            let actionAmountTwd = 0;
+
+            let buyPriceTrigger = prevHigh;
+            let sellPriceTrigger = prevLow;
+
+            const periodName = isWeekly ? "週" : "日";
+            const prevPeriodName = isWeekly ? "前週" : "昨日";
+            const currPeriodName = isWeekly ? "本週" : "今日";
+            const nextPeriodName = isWeekly ? "下週" : "明日";
+            const execAdvice = isWeekly ? "（每週下一單，建議於週五收盤前或週一開盤執行）" : "（每日盤中即時執行）";
+
+            if (brokePrevLow) {
+                if (premiumShares > 0) {
+                    signalType = "SELL";
+                    signalTitle = isWeekly ? "【週K向下慣性 - 觸發每週減碼訊號】" : "【向下慣性 - 觸發減碼訊號】";
+                    actionType = "減碼 (加碼倉砍半)";
+                    
+                    const premiumUnits = premiumShares / spu;
+                    actionUnits = Math.max(1, Math.floor(premiumUnits / 2));
+                    actionShares = actionUnits * spu;
+                    remainShares = s.currentHoldingShares - actionShares;
+                    actionAmountTwd = actionShares * close * mult;
+
+                    actionDesc = `${currPeriodName}最低價跌破${prevPeriodName}低點（${low.toFixed(2)} < ${prevPeriodName}低 ${prevLow.toFixed(2)}），向下連續性確立！${execAdvice}
+SOP 執行指令：立即賣出加碼倉（折溢部位）的 50%，鎖住波段利潤！
+👉 建議賣出：<strong>${actionUnits} ${unit}</strong>（約 ${actionShares.toLocaleString()} 股）。
+👉 建議賣出價：破${prevPeriodName}低 <strong>${sellPriceTrigger.toFixed(2)}</strong> 停利減碼。
+👉 抽回至停泊資金：<strong>NT$ ${Math.round(actionAmountTwd).toLocaleString()}</strong>。
+👉 減碼後留倉：<strong>${remainShares.toLocaleString()} 股</strong>（保留 40% 底倉 ${(baseShares/spu).toFixed(1)} ${unit} 絕對不賣）。`;
+                } else {
+                    signalType = "HOLD_BASE";
+                    signalTitle = isWeekly ? "【週K觸發破低防守 - 已達基本倉40%】" : "【觸發破低防守 - 已達基本倉40%】";
+                    actionType = "防守不賣";
+                    actionDesc = `${currPeriodName}雖跌破${prevPeriodName}低，但目前已退守至 40% 基本倉（${s.currentHoldingShares.toLocaleString()} 股）。
+SOP 執行指令：基本倉為波段種子，大盤拉回絕對不賣出！停止減碼動作，等待黑轉紅轉強訊號。`;
+                }
+            } else if (passedPrevHigh) {
+                signalType = "BUY";
+                signalTitle = isWeekly ? "【週K向上慣性 - 觸發每週加碼訊號】" : "【向上慣性 - 觸發加碼訊號】";
+                actionType = "順勢加碼";
+
+                if (s.currentHoldingShares < baseShares) {
+                    actionShares = Math.floor(baseShares * 0.08);
+                    actionUnits = Math.round((actionShares / spu) * 10) / 10;
+                    remainShares = s.currentHoldingShares + actionShares;
+                    actionAmountTwd = actionShares * close * mult;
+                    actionDesc = `${currPeriodName}突破${prevPeriodName}高（最高 ${high.toFixed(2)} > ${prevPeriodName}高 ${prevHigh.toFixed(2)}），基本倉建倉訊號浮現！${execAdvice}
+👉 建議買進：<strong>${actionUnits} ${unit}</strong>（約 ${actionShares.toLocaleString()} 股）。
+👉 需動用停泊資金：<strong>NT$ ${Math.round(actionAmountTwd).toLocaleString()}</strong>。
+👉 買入觸發價：盤中突破過${prevPeriodName}高 <strong>${buyPriceTrigger.toFixed(2)}</strong> 進場。`;
+                } else {
+                    if (premiumShares === 0) {
+                        actionShares = Math.floor(dynamicTargetShares * 0.08);
+                    } else {
+                        actionShares = Math.min(premiumShares, s.targetFullShares - s.currentHoldingShares);
+                        if (actionShares === 0) actionShares = Math.floor(dynamicTargetShares * 0.08);
+                    }
+                    actionShares = Math.min(actionShares, s.targetFullShares - s.currentHoldingShares);
+                    actionUnits = Math.round((actionShares / spu) * 10) / 10;
+                    remainShares = s.currentHoldingShares + actionShares;
+                    actionAmountTwd = actionShares * close * mult;
+
+                    if (s.currentHoldingShares >= s.targetFullShares) {
+                        actionDesc = `${currPeriodName}過${prevPeriodName}高（最高 ${high.toFixed(2)} > ${prevPeriodName}高 ${prevHigh.toFixed(2)}），已達 100% 滿倉（${s.currentHoldingShares.toLocaleString()} 股），請抱牢獲利！
+SOP 執行指令：順勢續抱，警戒${nextPeriodName}是否破低即可。`;
+                    } else {
+                        actionDesc = `${currPeriodName}突破過${prevPeriodName}高（最高 ${high.toFixed(2)} > ${prevPeriodName}高 ${prevHigh.toFixed(2)}），向上慣性成立！${execAdvice}
+SOP 執行指令：啟動順勢動態加碼！
+👉 建議加碼：<strong>${actionUnits} ${unit}</strong>（約 ${actionShares.toLocaleString()} 股）。
+👉 需動用停泊資金：<strong>NT$ ${Math.round(actionAmountTwd).toLocaleString()}</strong>。
+👉 加碼觸發價：突破過${prevPeriodName}高 <strong>${buyPriceTrigger.toFixed(2)}</strong> 時進場。
+👉 加碼後部位：<strong>${remainShares.toLocaleString()} 股</strong>（約 ${(remainShares/spu).toFixed(1)} ${unit}）。`;
+                    }
+                }
+            } else {
+                signalType = "WATCH";
+                signalTitle = isWeekly ? "【週K區間整理 - 觀望續抱】" : "【區間整理 - 觀望續抱】";
+                actionType = "持股觀望";
+                actionDesc = `${currPeriodName}走勢未破${prevPeriodName}低（${prevPeriodName}低 ${prevLow.toFixed(2)}），亦未突破${prevPeriodName}高（${prevPeriodName}高 ${prevHigh.toFixed(2)}）。
+SOP 執行指令：不破低、不動作，維持現有持股觀望續抱，資金留作停泊現金儲備。`;
+            }
+
+            // 資產配置試算 (依自訂比例 %)
+            const allocationRatio = s.allocationRatio !== undefined ? s.allocationRatio : 20;
+            const targetBudgetTwd = totalCapital * (allocationRatio / 100);
+            const baseBudgetTwd = targetBudgetTwd * (s.baseRatio || 0.40);
+            const dynamicBudgetTwd = targetBudgetTwd - baseBudgetTwd;
+            const stockParkedCashTwd = Math.max(0, targetBudgetTwd - marketValueTwd);
+            const shortfallBaseTwd = Math.max(0, baseBudgetTwd - marketValueTwd);
+            const priceTwd = close * mult;
+            const shortfallBaseShares = priceTwd > 0 ? Math.ceil(shortfallBaseTwd / priceTwd) : 0;
+            const targetBaseShares = priceTwd > 0 ? Math.ceil(baseBudgetTwd / priceTwd) : 0;
+            const targetTotalShares = priceTwd > 0 ? Math.ceil(targetBudgetTwd / priceTwd) : 0;
+
+            // 自訂資產配置與 SOP 診斷指令 (配合自填持有股數與購入成本)
+            let allocStatusTag = "";
+            let allocAdviceText = "";
+
+            if (s.currentHoldingShares === 0) {
+                if (passedPrevHigh) {
+                    allocStatusTag = `<span class="badge bg-success mb-1"><i class="fa-solid fa-arrow-trend-up me-1"></i>過高！啟動初次建倉</span>`;
+                    allocAdviceText = `<strong>盤中突破過高！</strong>可動用資金建立 40% 底倉（應建 NT$ ${Math.round(baseBudgetTwd).toLocaleString()}，約 ${targetBaseShares.toLocaleString()} 股）。第一筆可先建 8% 試水溫！`;
+                } else {
+                    allocStatusTag = `<span class="badge bg-secondary mb-1"><i class="fa-solid fa-hourglass-start me-1"></i>空手觀望中</span>`;
+                    allocAdviceText = `尚未建立部位。40% 底倉預算為 NT$ ${Math.round(baseBudgetTwd).toLocaleString()}（約 ${targetBaseShares.toLocaleString()} 股），待日/週K出現轉折紅K或突破前高時分批建倉。`;
+                }
+            } else if (marketValueTwd < baseBudgetTwd) {
+                const fillPct = baseBudgetTwd > 0 ? ((marketValueTwd / baseBudgetTwd) * 100).toFixed(0) : 0;
+                if (brokePrevLow) {
+                    allocStatusTag = `<span class="badge bg-warning text-dark mb-1"><i class="fa-solid fa-shield-halved me-1"></i>底倉防守 (拉回不賣)</span>`;
+                    allocAdviceText = `現有部位佔 40% 底倉 <strong>${fillPct}%</strong>。走勢雖破低拉回，但<strong>40%底倉為護城河，拉回絕對不賣出！</strong>停止加碼，耐心等待止跌回升。`;
+                } else if (passedPrevHigh) {
+                    allocStatusTag = `<span class="badge bg-success mb-1"><i class="fa-solid fa-plus me-1"></i>過高！補齊40%底倉</span>`;
+                    allocAdviceText = `突破過高向上慣性！建議動用停泊資金加碼 <strong>${Math.min(shortfallBaseShares, Math.max(1, Math.ceil(targetBaseShares * 0.08))).toLocaleString()} 股</strong>，逐步填滿 40% 底倉目標（尚缺 ${shortfallBaseShares.toLocaleString()} 股）。`;
+                } else {
+                    allocStatusTag = `<span class="badge bg-info text-white mb-1"><i class="fa-solid fa-layer-group me-1"></i>底倉建立中 (${fillPct}%)</span>`;
+                    allocAdviceText = `目前市值已建 <strong>${fillPct}%</strong> 底倉，尚缺 NT$ ${Math.round(shortfallBaseTwd).toLocaleString()}（約 ${shortfallBaseShares.toLocaleString()} 股）。未破低續抱，等待轉強加滿 40%。`;
+                }
+            } else if (marketValueTwd >= baseBudgetTwd && marketValueTwd < targetBudgetTwd) {
+                const totalFillPct = targetBudgetTwd > 0 ? ((marketValueTwd / targetBudgetTwd) * 100).toFixed(0) : 0;
+                if (brokePrevLow) {
+                    allocStatusTag = `<span class="badge bg-danger mb-1"><i class="fa-solid fa-arrow-down me-1"></i>破低！加碼倉砍半</span>`;
+                    allocAdviceText = `40% 底倉已穩固！短線跌破低點，<strong>請將加碼倉砍半（賣出 50% 折溢部位）</strong>，40% 底倉雷打不動堅決續抱，抽回資金回補停泊金額！`;
+                } else if (passedPrevHigh) {
+                    allocStatusTag = `<span class="badge bg-success mb-1"><i class="fa-solid fa-bolt me-1"></i>過高！動態順勢加碼</span>`;
+                    allocAdviceText = `40% 底倉健全，且突破過高慣性向上！可動用剩餘可加碼金額（尚餘 NT$ ${Math.round(stockParkedCashTwd).toLocaleString()}）階梯式順勢加碼！`;
+                } else {
+                    allocStatusTag = `<span class="badge bg-primary mb-1"><i class="fa-solid fa-circle-check me-1"></i>40%底倉穩固 ｜ 續抱</span>`;
+                    allocAdviceText = `40% 底倉已達標，整體已運用 <strong>${totalFillPct}%</strong> 預算。區間整理未破低，安心續抱讓獲利發酵；手頭停泊款 NT$ ${Math.round(stockParkedCashTwd).toLocaleString()} 待命。`;
+                }
+            } else {
+                if (brokePrevLow) {
+                    allocStatusTag = `<span class="badge bg-danger mb-1"><i class="fa-solid fa-hand-holding-dollar me-1"></i>滿倉破低 ｜ 減碼鎖利</span>`;
+                    allocAdviceText = `已達 100% 滿倉！跌破低點轉弱，<strong>立即賣出加碼部位的 50%</strong> 鎖住利潤，40% 底倉續留！`;
+                } else {
+                    allocStatusTag = `<span class="badge text-white mb-1" style="background:#8b5cf6;"><i class="fa-solid fa-trophy me-1"></i>100% 滿倉大贏家</span>`;
+                    allocAdviceText = `該標的已達 100% 滿額配置！慣性維持強勢，抱緊波段持股，僅須在跌破低點時依 SOP 啟動減碼。`;
+                }
+            }
+
+            return {
+                ...s,
+                open,
+                high,
+                low,
+                close,
+                prevHigh,
+                prevLow,
+                prevClose,
+                isWeekly,
+                isRed,
+                isBlack,
+                brokePrevLow,
+                passedPrevHigh,
+                priceChange,
+                pctChange,
+                baseShares,
+                premiumShares,
+                holdingPct,
+                costPrice,
+                marketValueTwd,
+                costValueTwd,
+                unrealizedProfitTwd,
+                roiPct,
+                realizedProfitTwd,
+                baseMarketValueTwd,
+                premiumMarketValueTwd,
+                signalType,
+                signalTitle,
+                actionType,
+                actionShares,
+                actionUnits,
+                remainShares,
+                actionDesc,
+                actionAmountTwd,
+                buyPriceTrigger,
+                sellPriceTrigger,
+                tomorrowBreakout: high,
+                tomorrowDefense: low,
+                allocationRatio,
+                targetBudgetTwd,
+                baseBudgetTwd,
+                dynamicBudgetTwd,
+                stockParkedCashTwd,
+                shortfallBaseTwd,
+                shortfallBaseShares,
+                targetBaseShares,
+                targetTotalShares,
+                allocStatusTag,
+                allocAdviceText
+            };
+        }
+
+        // 渲染儀表板
+        function renderDashboard() {
+            document.getElementById('inputTotalCapital').value = totalCapital;
+            document.getElementById('inputUsdRate').value = usdExchangeRate;
+
+            const container = document.getElementById('stockCardsContainer');
+            container.innerHTML = "";
+
+            let totalMarketValueTwd = 0;
+            let totalCostValueTwd = 0;
+            let totalUnrealizedProfitTwd = 0;
+            let totalRealizedProfitTwd = 0;
+            let totalAddCostTwd = 0;
+            let totalRecoverCashTwd = 0;
+
+            let buyCount = 0;
+            let sellCount = 0;
+
+            const isWeekly = (currentTimeframe === 'weekly');
+            const prevLabel = isWeekly ? '前週最高 / 最低' : '昨日高 / 低';
+            const currLabel = isWeekly ? '本週最高 / 最低' : '今日高 / 低';
+            const nextDecisionTitle = isWeekly ? '下週關鍵決策線（週波段買賣觸發價）：' : '明日關鍵決策線（反轉／加減碼價格）：';
+            const nextBuyLabel = isWeekly ? '▲ 下週過高加碼買入價：' : '▲ 向上加碼買入價：';
+            const nextSellLabel = isWeekly ? '▼ 下週破低減碼賣出價：' : '▼ 向下減碼賣出價：';
+            const kLineLabel = isWeekly ? '週K棒' : '日K棒';
+
+            stockList.forEach((rawStock, index) => {
+                const s = analyzeStock(rawStock);
+                if (s.signalType === "BUY") {
+                    buyCount++;
+                    totalAddCostTwd += s.actionAmountTwd;
+                }
+                if (s.signalType === "SELL") {
+                    sellCount++;
+                    totalRecoverCashTwd += s.actionAmountTwd;
+                }
+
+                totalMarketValueTwd += s.marketValueTwd;
+                totalCostValueTwd += s.costValueTwd;
+                totalUnrealizedProfitTwd += s.unrealizedProfitTwd;
+                totalRealizedProfitTwd += s.realizedProfitTwd;
+
+                const isTW = s.market === "TW";
+                const chgColor = s.pctChange >= 0 ? (isTW ? "text-danger" : "text-success") : (isTW ? "text-success" : "text-danger");
+                const chgSign = s.pctChange >= 0 ? "+" : "";
+
+                const signalClass = {
+                    "SELL": "signal-sell-box",
+                    "BUY": "signal-buy-box",
+                    "HOLD_BASE": "signal-holdbase-box",
+                    "WATCH": "signal-watch-box"
+                }[s.signalType];
+
+                const signalBadge = {
+                    "SELL": `<span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-arrow-down me-1"></i>${isWeekly ? '週K減碼 (砍半)' : '減碼 (砍半)'}</span>`,
+                    "BUY": `<span class="badge bg-success rounded-pill px-3 py-2"><i class="fa-solid fa-arrow-up me-1"></i>${isWeekly ? '週K加碼 (噴出)' : '加碼 (噴出)'}</span>`,
+                    "HOLD_BASE": `<span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-shield me-1"></i>40% 基本倉防守</span>`,
+                    "WATCH": `<span class="badge bg-info text-white rounded-pill px-3 py-2"><i class="fa-solid fa-eye me-1"></i>${isWeekly ? '週K觀望續抱' : '觀望續抱'}</span>`
+                }[s.signalType];
+
+                const unrealClass = s.unrealizedProfitTwd >= 0 ? "profit-pos" : "profit-neg";
+
+                const cardHtml = `
+                    <div class="col-lg-6">
+                        <div class="stock-card h-100 p-4">
+                            <!-- 頂部標頭與操作選單 -->
+                            <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-3">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-dark fs-6 px-2 py-1">${s.symbol}</span>
+                                        <h3 class="h4 fw-bold mb-0 text-dark">${s.name}</h3>
+                                        <span class="badge ${isWeekly ? 'bg-purple text-white' : 'bg-primary'} rounded-pill px-2 py-1 small" style="${isWeekly ? 'background-color:#9333ea;' : ''}">
+                                            ${isWeekly ? '週K長波段' : '日K短波段'}
+                                        </span>
+                                    </div>
+                                    <span class="text-muted small">市場：${s.market === 'TW' ? '台股' : '美股'} ｜ 單位：${s.unitName}</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="mb-2">${signalBadge}</div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" onclick="editStock(${index})" title="調整成本與持倉">
+                                            <i class="fa-solid fa-pen me-1"></i>修改
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" onclick="deleteStock(${index})" title="刪除此股票">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 即時報價與K棒 -->
+                            <div class="d-flex justify-content-between align-items-baseline mb-3">
+                                <div>
+                                    <span class="display-6 fw-bold text-dark">${s.close.toFixed(2)}</span>
+                                    <span class="ms-2 fs-6 fw-bold ${chgColor}">${chgSign}${s.priceChange.toFixed(2)} (${chgSign}${s.pctChange.toFixed(2)}%)</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge ${s.isRed ? 'badge-tw-red' : 'badge-tw-green'} px-2 py-1 small">
+                                        ${s.isRed ? `🔴 紅K (${kLineLabel}陽)` : `🟢 黑K (${kLineLabel}陰)`}
+                                    </span>
+                                    <div class="text-muted x-small" style="font-size: 0.75rem;">開盤 ${s.open.toFixed(2)} ➔ 最新 ${s.close.toFixed(2)}</div>
+                                </div>
+                            </div>
+
+                            <!-- 財務價值、預估利潤與成效面板 -->
+                            <div class="p-3 rounded-3 mb-3" style="background: #f1f5f9; border: 1px solid #cbd5e1;">
+                                <div class="row g-2 text-center">
+                                    <div class="col-4">
+                                        <span class="text-muted x-small d-block">留倉總市值 (NTD)</span>
+                                        <strong class="text-dark fs-6">NT$ ${Math.round(s.marketValueTwd).toLocaleString()}</strong>
+                                        <span class="x-small text-muted d-block">${s.currentHoldingShares.toLocaleString()} 股</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="text-muted x-small d-block">預估利潤 (成效)</span>
+                                        <strong class="${unrealClass} fs-6">${s.unrealizedProfitTwd >= 0 ? '+' : ''}NT$ ${Math.round(s.unrealizedProfitTwd).toLocaleString()}</strong>
+                                        <span class="x-small ${unrealClass} d-block">(${s.roiPct >= 0 ? '+' : ''}${s.roiPct.toFixed(1)}%)</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="text-muted x-small d-block">累計已實現獲利</span>
+                                        <strong class="text-success fs-6">NT$ ${Math.round(s.realizedProfitTwd).toLocaleString()}</strong>
+                                        <span class="x-small text-success d-block">已入帳停泊</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between x-small text-muted border-top border-secondary-subtle pt-2 mt-2">
+                                    <span>平均成本：<strong>${s.costPrice.toFixed(2)}</strong></span>
+                                    <span>40% 底倉價值：<strong>NT$ ${Math.round(s.baseMarketValueTwd).toLocaleString()}</strong></span>
+                                    <span>加碼倉價值：<strong>NT$ ${Math.round(s.premiumMarketValueTwd).toLocaleString()}</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- 昨今 (或前後週) 高低比對 -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <div class="metric-cell">
+                                        <div class="text-muted small">${prevLabel}</div>
+                                        <div class="fw-bold text-dark">${s.prevHigh.toFixed(2)} / ${s.prevLow.toFixed(2)}</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="metric-cell">
+                                        <div class="text-muted small">${currLabel}</div>
+                                        <div class="fw-bold text-dark">${s.high.toFixed(2)} / ${s.low.toFixed(2)}</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="metric-cell">
+                                        <div class="text-muted small">慣性突破檢驗</div>
+                                        <div>
+                                            <span class="badge ${s.passedPrevHigh ? 'bg-success' : 'bg-secondary'}">${s.passedPrevHigh ? (isWeekly ? '過前週高' : '過昨高') : (isWeekly ? '未過週高' : '未過高')}</span>
+                                            <span class="badge ${s.brokePrevLow ? 'bg-danger' : 'bg-secondary'}">${s.brokePrevLow ? (isWeekly ? '破前週低' : '破昨低') : (isWeekly ? '未破週低' : '未破低')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 倉位分佈進度條 -->
+                            <div class="p-3 bg-light rounded-3 mb-3 border">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>目前持股：<strong>${s.holdingPct.toFixed(1)}%</strong> (${s.currentHoldingShares.toLocaleString()} 股 / ${(s.currentHoldingShares/s.sharesPerUnit).toFixed(1)} ${s.unitName})</span>
+                                    <span>滿倉目標：${s.targetFullShares.toLocaleString()} 股 (${(s.targetFullShares/s.sharesPerUnit).toFixed(1)} ${s.unitName})</span>
+                                </div>
+                                <div class="progress progress-thin mb-2">
+                                    <div class="progress-bar bg-primary" style="width: ${Math.min(s.baseRatio*100, s.holdingPct)}%;" title="基本防守倉">基本倉 ${(s.baseRatio*100).toFixed(0)}%</div>
+                                    <div class="progress-bar bg-warning" style="width: ${Math.max(0, s.holdingPct - (s.baseRatio*100))}%;" title="動態加碼倉">加碼倉</div>
+                                </div>
+                                <div class="d-flex justify-content-between small" style="font-size: 0.8rem;">
+                                    <span>🛡️ 基本防守倉 (${(s.baseRatio*100).toFixed(0)}%)：<strong>${s.baseShares.toLocaleString()} 股</strong></span>
+                                    <span>⚡ 動態加碼倉 (折溢)：<strong class="text-primary">${s.premiumShares.toLocaleString()} 股</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- SOP 執行指令與具體加減金額建議 -->
+                            <div class="${signalClass} mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="fw-bold fs-6">
+                                        <i class="fa-solid fa-bullhorn me-1"></i>${s.signalTitle}
+                                    </div>
+                                    ${s.signalType === 'SELL' && s.premiumShares > 0 ? `
+                                        <button class="btn btn-sm btn-danger rounded-pill px-3 py-1 fw-bold shadow-sm" onclick="executeTrimAndRealize(${index})">
+                                            <i class="fa-solid fa-hand-holding-dollar me-1"></i>執行減碼入帳
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                <div class="small" style="white-space: pre-line;">${s.actionDesc}</div>
+                            </div>
+
+                            <!-- 下週期決策觸發點 -->
+                            <div class="p-3 bg-white rounded-3 border">
+                                <div class="fw-bold text-dark small mb-2"><i class="fa-solid fa-compass text-primary me-1"></i>${nextDecisionTitle}</div>
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <div class="p-2 rounded bg-light border-start border-success border-3">
+                                            <span class="text-success fw-bold">${nextBuyLabel}</span><br>
+                                            突破 <strong>${s.tomorrowBreakout.toFixed(2)}</strong> 且收紅
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 rounded bg-light border-start border-danger border-3">
+                                            <span class="text-danger fw-bold">${nextSellLabel}</span><br>
+                                            跌破 <strong>${s.tomorrowDefense.toFixed(2)}</strong> 砍半
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+
+            // 停泊資金 = 總資本 + 累計已實現獲利 - 留倉總市值
+            const parkedCashTwd = (totalCapital + totalRealizedProfitTwd) - totalMarketValueTwd;
+            const equityRatio = (totalCapital + totalRealizedProfitTwd) > 0 ? (totalMarketValueTwd / (totalCapital + totalRealizedProfitTwd)) * 100 : 0;
+            const cashRatio = (totalCapital + totalRealizedProfitTwd) > 0 ? (parkedCashTwd / (totalCapital + totalRealizedProfitTwd)) * 100 : 0;
+            const totalRoi = totalCostValueTwd > 0 ? (totalUnrealizedProfitTwd / totalCostValueTwd) * 100 : 0;
+
+            // 更新頂部 KPI
+            document.getElementById('kpiTotalCapital').innerText = `NT$ ${Math.round(totalCapital).toLocaleString()}`;
+            document.getElementById('kpiMarketValue').innerText = `NT$ ${Math.round(totalMarketValueTwd).toLocaleString()}`;
+            document.getElementById('kpiEquityRatio').innerText = `資金水位 ${equityRatio.toFixed(1)}%`;
+            
+            const unrealEl = document.getElementById('kpiUnrealizedProfit');
+            unrealEl.innerText = `${totalUnrealizedProfitTwd >= 0 ? '+' : ''}NT$ ${Math.round(totalUnrealizedProfitTwd).toLocaleString()}`;
+            unrealEl.className = `h4 fw-bold mb-0 mt-1 ${totalUnrealizedProfitTwd >= 0 ? 'text-danger' : 'text-success'}`;
+            document.getElementById('kpiTotalRoi').innerText = `整體報酬率 ${totalRoi >= 0 ? '+' : ''}${totalRoi.toFixed(2)}%`;
+
+            document.getElementById('kpiParkedCash').innerText = `NT$ ${Math.round(parkedCashTwd).toLocaleString()}`;
+            document.getElementById('kpiRealizedNote').innerText = `含累計實現獲利 NT$ ${Math.round(totalRealizedProfitTwd).toLocaleString()}`;
+
+            // 更新比例條
+            document.getElementById('barEquityText').innerText = `NT$ ${Math.round(totalMarketValueTwd).toLocaleString()} (${equityRatio.toFixed(1)}%)`;
+            document.getElementById('barCashText').innerText = `NT$ ${Math.round(parkedCashTwd).toLocaleString()} (${cashRatio.toFixed(1)}%)`;
+            document.getElementById('barEquity').style.width = `${Math.min(100, Math.max(0, equityRatio))}%`;
+            document.getElementById('barCash').style.width = `${Math.min(100, Math.max(0, cashRatio))}%`;
+
+            // 更新調倉變動摘要
+            document.getElementById('sumAddCost').innerText = `NT$ ${Math.round(totalAddCostTwd).toLocaleString()}`;
+            document.getElementById('sumRecoverCash').innerText = `NT$ ${Math.round(totalRecoverCashTwd).toLocaleString()}`;
+            document.getElementById('sumPostCash').innerText = `NT$ ${Math.round(parkedCashTwd - totalAddCostTwd + totalRecoverCashTwd).toLocaleString()}`;
+
+            // 即時渲染資產配置中樞與自訂比例試算盤
+            renderAllocationHub();
+        }
+
+        const ALLOC_PALETTE = [
+            { bg: '#2563eb', text: '#ffffff' }, // 藍
+            { bg: '#059669', text: '#ffffff' }, // 綠
+            { bg: '#0891b2', text: '#ffffff' }, // 青
+            { bg: '#d97706', text: '#ffffff' }, // 琥珀
+            { bg: '#7c3aed', text: '#ffffff' }, // 紫
+            { bg: '#db2777', text: '#ffffff' }, // 粉
+            { bg: '#4b5563', text: '#ffffff' }, // 灰
+            { bg: '#dc2626', text: '#ffffff' }  // 紅
+        ];
+
+        // 渲染資產配置中樞與自訂比例試算盤
+        function renderAllocationHub() {
+            const tableBody = document.getElementById('allocationTableBody');
+            const tableFooter = document.getElementById('allocationTableFooter');
+            const progressBar = document.getElementById('allocMultiProgressBar');
+            const legendBox = document.getElementById('allocLegendBox');
+            const badgeEl = document.getElementById('totalAllocationBadge');
+            const progressText = document.getElementById('allocProgressText');
+            const capitalInput = document.getElementById('inputAllocTotalCapital');
+
+            if (!tableBody || !tableFooter) return;
+
+            if (capitalInput && document.activeElement !== capitalInput) {
+                capitalInput.value = totalCapital;
+            }
+
+            let totalAllocRatio = 0;
+            let totalTargetBudget = 0;
+            let totalBaseBudget = 0;
+            let totalDynamicBudget = 0;
+            let totalAllocMarketValue = 0;
+            let totalAllocCostValue = 0;
+            let totalAllocUnrealized = 0;
+            let totalAllocParkedCash = 0;
+
+            let rowsHtml = "";
+            let barHtml = "";
+            let legendHtml = "";
+
+            stockList.forEach((raw, idx) => {
+                const s = analyzeStock(raw);
+                const color = ALLOC_PALETTE[idx % ALLOC_PALETTE.length];
+                const ratio = s.allocationRatio !== undefined ? s.allocationRatio : 20;
+                const isTW = s.market === "TW";
+                const isUS = s.market === "US";
+                const mult = isUS ? usdExchangeRate : 1.0;
+                const unrealClass = s.unrealizedProfitTwd >= 0 ? "text-danger" : "text-success";
+                const roiSign = s.roiPct >= 0 ? "+" : "";
+                const profitSign = s.unrealizedProfitTwd >= 0 ? "+" : "";
+
+                totalAllocRatio += ratio;
+                totalTargetBudget += s.targetBudgetTwd;
+                totalBaseBudget += s.baseBudgetTwd;
+                totalDynamicBudget += s.dynamicBudgetTwd;
+                totalAllocMarketValue += s.marketValueTwd;
+                totalAllocCostValue += s.costValueTwd;
+                totalAllocUnrealized += s.unrealizedProfitTwd;
+                totalAllocParkedCash += s.stockParkedCashTwd;
+
+                if (ratio > 0) {
+                    barHtml += `
+                        <div class="progress-bar fw-bold" role="progressbar" style="width: ${ratio}%; background-color: ${color.bg}; color: ${color.text}; font-size: 0.75rem;" title="${s.name} ${ratio}%">
+                            ${ratio >= 8 ? `${s.symbol} ${ratio}%` : `${ratio}%`}
+                        </div>
+                    `;
+                }
+
+                legendHtml += `
+                    <span class="alloc-legend-pill">
+                        <span class="alloc-legend-dot me-1" style="background-color: ${color.bg};"></span>
+                        <strong>${s.name} (${s.symbol})</strong>: ${ratio}% (NT$ ${Math.round(s.targetBudgetTwd).toLocaleString()})
+                    </span>
+                `;
+
+                rowsHtml += `
+                    <tr>
+                        <!-- 投資選項 (標的) -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="alloc-legend-dot" style="background-color: ${color.bg};"></span>
+                                <div>
+                                    <strong class="text-dark fs-6">${s.name}</strong>
+                                    <span class="badge bg-dark ms-1">${s.symbol}</span>
+                                    <div class="x-small text-muted">
+                                        ${isTW ? '台股' : '美股'} ｜ 現價 <strong>${s.close.toFixed(2)}</strong> ${isUS ? `(約 NT$ ${Math.round(s.close * mult).toLocaleString()})` : '元'}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <!-- 欲投資比例 -->
+                        <td class="text-center">
+                            <div class="input-group input-group-sm d-inline-flex justify-content-center" style="width: 90px;">
+                                <input type="number" min="0" max="100" class="form-control form-control-sm alloc-input-ratio fw-bold" 
+                                       value="${ratio}" 
+                                       onchange="onAllocRatioChange(${idx}, this.value)">
+                                <span class="input-group-text px-1 bg-white">%</span>
+                            </div>
+                        </td>
+                        <!-- 分配總預算 -->
+                        <td class="text-end">
+                            <strong class="text-dark">NT$ ${Math.round(s.targetBudgetTwd).toLocaleString()}</strong>
+                            <div class="x-small text-muted">滿倉約 ${s.targetTotalShares.toLocaleString()} 股</div>
+                        </td>
+                        <!-- 應建倉金額 (40%底倉) -->
+                        <td class="text-end" style="background-color: #f8fafc;">
+                            <strong class="text-primary">NT$ ${Math.round(s.baseBudgetTwd).toLocaleString()}</strong>
+                            <div class="x-small text-muted">應建底倉約 ${s.targetBaseShares.toLocaleString()} 股</div>
+                        </td>
+                        <!-- 可加碼金額 (60%動態) -->
+                        <td class="text-end">
+                            <strong class="text-warning text-dark">NT$ ${Math.round(s.dynamicBudgetTwd).toLocaleString()}</strong>
+                            <div class="x-small text-muted">階梯加碼動態額度</div>
+                        </td>
+                        <!-- 目前持有股數 (可自填) -->
+                        <td class="text-end">
+                            <input type="number" min="0" step="1" class="form-control form-control-sm alloc-input-holding fw-bold ms-auto" 
+                                   value="${s.currentHoldingShares}" 
+                                   onchange="onAllocHoldingChange(${idx}, this.value)">
+                            <div class="x-small text-muted mt-1">${(s.currentHoldingShares / (s.sharesPerUnit || 1)).toFixed(1)} ${s.unitName || '股'}</div>
+                        </td>
+                        <!-- 平均購入價位 (可自填) -->
+                        <td class="text-end">
+                            <input type="number" min="0" step="0.01" class="form-control form-control-sm alloc-input-cost fw-bold ms-auto" 
+                                   value="${s.costPrice || s.close}" 
+                                   onchange="onAllocCostChange(${idx}, this.value)">
+                            <div class="x-small text-muted mt-1">成本均價</div>
+                        </td>
+                        <!-- 留倉總市值 -->
+                        <td class="text-end">
+                            <strong class="text-dark">NT$ ${Math.round(s.marketValueTwd).toLocaleString()}</strong>
+                            <div class="x-small text-muted">本金 NT$ ${Math.round(s.costValueTwd).toLocaleString()}</div>
+                        </td>
+                        <!-- 報酬率 (獲利) -->
+                        <td class="text-end">
+                            <strong class="${unrealClass} fs-6">${roiSign}${s.roiPct.toFixed(1)}%</strong>
+                            <div class="x-small ${unrealClass}">${profitSign}NT$ ${Math.round(s.unrealizedProfitTwd).toLocaleString()}</div>
+                        </td>
+                        <!-- 停泊金額 (未動用) -->
+                        <td class="text-end" style="background-color: #f0fdf4;">
+                            <strong class="text-success fs-6">NT$ ${Math.round(s.stockParkedCashTwd).toLocaleString()}</strong>
+                            <div class="x-small text-muted">佔標的預算 ${s.targetBudgetTwd > 0 ? ((s.stockParkedCashTwd / s.targetBudgetTwd) * 100).toFixed(0) : 0}%</div>
+                        </td>
+                        <!-- SOP 投資建議與診斷指令 -->
+                        <td style="max-width: 320px;">
+                            <div class="p-2 rounded-2 bg-light border small">
+                                ${s.allocStatusTag}
+                                <div class="x-small text-secondary" style="line-height: 1.4;">${s.allocAdviceText}</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableBody.innerHTML = rowsHtml;
+
+            // 底部總計
+            const totalAllocRoi = totalAllocCostValue > 0 ? ((totalAllocMarketValue - totalAllocCostValue) / totalAllocCostValue) * 100 : 0;
+            const totalUnrealClass = totalAllocUnrealized >= 0 ? "text-danger" : "text-success";
+            tableFooter.innerHTML = `
+                <tr class="table-dark text-white">
+                    <td class="text-center fw-bold">全投資組合合計</td>
+                    <td class="text-center fw-bold ${totalAllocRatio === 100 ? 'text-success' : 'text-warning'}">${totalAllocRatio}%</td>
+                    <td class="text-end text-warning fw-bold">NT$ ${Math.round(totalTargetBudget).toLocaleString()}</td>
+                    <td class="text-end text-info fw-bold">NT$ ${Math.round(totalBaseBudget).toLocaleString()}</td>
+                    <td class="text-end text-light fw-bold">NT$ ${Math.round(totalDynamicBudget).toLocaleString()}</td>
+                    <td class="text-center text-muted" colspan="2">各標的即時持倉與成本</td>
+                    <td class="text-end fw-bold">NT$ ${Math.round(totalAllocMarketValue).toLocaleString()}</td>
+                    <td class="text-end fw-bold ${totalUnrealClass}">
+                        ${totalAllocRoi >= 0 ? '+' : ''}${totalAllocRoi.toFixed(1)}%<br>
+                        <span class="x-small fw-normal">(${totalAllocUnrealized >= 0 ? '+' : ''}NT$ ${Math.round(totalAllocUnrealized).toLocaleString()})</span>
+                    </td>
+                    <td class="text-end text-success fw-bold fs-6">NT$ ${Math.round(totalAllocParkedCash).toLocaleString()}</td>
+                    <td class="small text-light opacity-90">
+                        💡 總停泊資金 NT$ ${Math.round(totalAllocParkedCash).toLocaleString()}，備戰隨時順勢加碼！
+                    </td>
+                </tr>
+            `;
+
+            // 進度條與圖例
+            if (progressBar) progressBar.innerHTML = barHtml || '<div class="progress-bar bg-secondary" style="width:100%">未配置</div>';
+            if (legendBox) legendBox.innerHTML = legendHtml;
+
+            // 比例合計標籤
+            if (badgeEl) {
+                if (totalAllocRatio === 100) {
+                    badgeEl.className = "badge bg-success px-3 py-2 rounded-pill fs-6";
+                    badgeEl.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i>配置比例合計：100% (完美平衡)`;
+                } else if (totalAllocRatio > 100) {
+                    badgeEl.className = "badge bg-danger px-3 py-2 rounded-pill fs-6";
+                    badgeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i>配置比例合計：${totalAllocRatio}% (超出100%)`;
+                } else {
+                    badgeEl.className = "badge bg-warning text-dark px-3 py-2 rounded-pill fs-6";
+                    badgeEl.innerHTML = `<i class="fa-solid fa-circle-info me-1"></i>配置比例合計：${totalAllocRatio}% (尚餘 ${100 - totalAllocRatio}% 未分配)`;
+                }
+            }
+
+            if (progressText) {
+                progressText.innerText = `已配置 ${totalAllocRatio}% / 總本金 NT$ ${Math.round(totalCapital).toLocaleString()}`;
+            }
+        }
+
+        // 自填總資金輸入處理
+        function onAllocTotalCapitalInput(val) {
+            const num = parseFloat(val);
+            if (!isNaN(num) && num > 0) {
+                totalCapital = num;
+                document.getElementById('inputTotalCapital').value = totalCapital;
+                saveToStorage();
+                renderDashboard();
+                updateLineShareLink();
+            }
+        }
+
+        // 自訂欲投資比例變更處理
+        function onAllocRatioChange(index, val) {
+            const ratio = Math.max(0, parseFloat(val) || 0);
+            if (stockList[index]) {
+                stockList[index].allocationRatio = ratio;
+                saveToStorage();
+                renderDashboard();
+                updateLineShareLink();
+            }
+        }
+
+        // 自填持有股數變更處理
+        function onAllocHoldingChange(index, val) {
+            const shares = Math.max(0, parseFloat(val) || 0);
+            if (stockList[index]) {
+                stockList[index].currentHoldingShares = shares;
+                saveToStorage();
+                renderDashboard();
+                updateLineShareLink();
+            }
+        }
+
+        // 自填平均購入價位變更處理
+        function onAllocCostChange(index, val) {
+            const cost = Math.max(0, parseFloat(val) || 0);
+            if (stockList[index]) {
+                stockList[index].costPrice = cost;
+                saveToStorage();
+                renderDashboard();
+                updateLineShareLink();
+            }
+        }
+
+        // 還原預設配置比例 (40/20/20/10/10)
+        function resetDefaultAllocations() {
+            stockList.forEach(s => {
+                if (s.symbol === "2330") s.allocationRatio = 40;
+                else if (s.symbol === "SPY") s.allocationRatio = 20;
+                else if (s.symbol === "00981A") s.allocationRatio = 20;
+                else if (s.symbol === "00982A") s.allocationRatio = 10;
+                else if (s.symbol === "00992A") s.allocationRatio = 10;
+                else s.allocationRatio = 10;
+            });
+            totalCapital = 1500000;
+            document.getElementById('inputTotalCapital').value = totalCapital;
+            if (document.getElementById('inputAllocTotalCapital')) document.getElementById('inputAllocTotalCapital').value = totalCapital;
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+            Swal.fire({
+                title: '已還原預設配置！',
+                text: '已還原為：總資金 150萬 ｜ 台積電40%、SPY 20%、00981A 20%、00982A 10%、00992A 10%！',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // 開啟新增視窗
+        function openAddStockModal() {
+            document.getElementById('stockForm').reset();
+            document.getElementById('editStockId').value = "";
+            document.getElementById('stockModalLabel').innerHTML = '<i class="fa-solid fa-plus me-2"></i>新增追蹤股票、成本與倉位';
+            document.getElementById('inputAllocationRatio').value = 20;
+            document.getElementById('inputBaseRatio').value = 40;
+            document.getElementById('inputRealizedProfit').value = 0;
+            stockModalInstance.show();
+        }
+
+        // 編輯既有股票
+        function editStock(index) {
+            const s = stockList[index];
+            document.getElementById('editStockId').value = index;
+            document.getElementById('stockModalLabel').innerHTML = `<i class="fa-solid fa-pen-to-square me-2"></i>修改 ${s.symbol} ${s.name} 成本與倉位`;
+
+            document.getElementById('inputSymbol').value = s.symbol;
+            document.getElementById('inputName').value = s.name;
+            document.getElementById('inputMarket').value = s.market;
+            document.getElementById('inputAllocationRatio').value = s.allocationRatio !== undefined ? s.allocationRatio : 20;
+            document.getElementById('inputCostPrice').value = s.costPrice || s.close;
+            document.getElementById('inputRealizedProfit').value = s.realizedProfit || 0;
+            document.getElementById('inputClose').value = s.close;
+            document.getElementById('inputOpen').value = s.open;
+            document.getElementById('inputHigh').value = s.high;
+            document.getElementById('inputLow').value = s.low;
+            document.getElementById('inputPrevHigh').value = s.prevHigh;
+            document.getElementById('inputPrevLow').value = s.prevLow;
+            document.getElementById('inputPrevClose').value = s.prevClose || s.close;
+            document.getElementById('inputTargetFull').value = s.targetFullShares;
+            document.getElementById('inputCurrentHolding').value = s.currentHoldingShares;
+            document.getElementById('inputBaseRatio').value = ((s.baseRatio || 0.4) * 100).toFixed(0);
+
+            stockModalInstance.show();
+        }
+
+        // 刪除股票
+        function deleteStock(index) {
+            const s = stockList[index];
+            Swal.fire({
+                title: `確定要移除 ${s.name} 嗎？`,
+                text: "移除後將停止每日慣性訊號追蹤。",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '確定移除',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    stockList.splice(index, 1);
+                    saveToStorage();
+                    renderDashboard();
+                    updateLineShareLink();
+                    Swal.fire('已移除！', `${s.name} 已從清單移除。`, 'success');
+                }
+            });
+        }
+
+        // 表單提交儲存
+        document.getElementById('stockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editStockId').value;
+            const market = document.getElementById('inputMarket').value;
+            const isTW = market === "TW";
+
+            const newStock = {
+                id: document.getElementById('inputSymbol').value.trim().toUpperCase(),
+                symbol: document.getElementById('inputSymbol').value.trim().toUpperCase(),
+                name: document.getElementById('inputName').value.trim(),
+                market: market,
+                allocationRatio: parseFloat(document.getElementById('inputAllocationRatio').value) || 20,
+                unitName: isTW ? "張" : "股",
+                sharesPerUnit: isTW ? 1000 : 1,
+                costPrice: parseFloat(document.getElementById('inputCostPrice').value) || parseFloat(document.getElementById('inputClose').value) || 0,
+                realizedProfit: parseFloat(document.getElementById('inputRealizedProfit').value) || 0,
+                targetFullShares: parseFloat(document.getElementById('inputTargetFull').value) || 10000,
+                currentHoldingShares: parseFloat(document.getElementById('inputCurrentHolding').value) || 0,
+                baseRatio: (parseFloat(document.getElementById('inputBaseRatio').value) || 40) / 100,
+                close: parseFloat(document.getElementById('inputClose').value) || 0,
+                open: parseFloat(document.getElementById('inputOpen').value) || 0,
+                high: parseFloat(document.getElementById('inputHigh').value) || 0,
+                low: parseFloat(document.getElementById('inputLow').value) || 0,
+                prevHigh: parseFloat(document.getElementById('inputPrevHigh').value) || 0,
+                prevLow: parseFloat(document.getElementById('inputPrevLow').value) || 0,
+                prevClose: parseFloat(document.getElementById('inputPrevClose').value) || parseFloat(document.getElementById('inputClose').value) || 0,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            if (editId !== "") {
+                stockList[parseInt(editId)] = newStock;
+            } else {
+                stockList.push(newStock);
+            }
+
+            saveToStorage();
+            renderDashboard();
+            updateLineShareLink();
+            stockModalInstance.hide();
+
+            Swal.fire({
+                title: '儲存成功！',
+                text: `${newStock.name} 數值與損益已更新並重新試算。`,
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        });
+
+        // 重設回預設
+        function resetToDefault() {
+            Swal.fire({
+                title: '確定還原為預設設定？',
+                text: '將重置為 150 萬自訂資產配置與 5 檔預設投資組合。',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '確定還原',
+                cancelButtonText: '取消'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    totalCapital = 1500000;
+                    usdExchangeRate = 32.5;
+                    stockList = JSON.parse(JSON.stringify(DEFAULT_STOCKS));
+                    saveToStorage();
+                    window.location.hash = "";
+                    renderDashboard();
+                    updateLineShareLink();
+                    Swal.fire('已重置！', '已成功還原為 150 萬資產配置預設清單。', 'success');
+                }
+            });
+        }
+
+        // 產生可分享的 URL
+        function getShareableUrl() {
+            const payload = {
+                totalCapital: totalCapital,
+                usdRate: usdExchangeRate,
+                stocks: stockList
+            };
+            const jsonStr = JSON.stringify(payload);
+            const encoded = btoa(encodeURIComponent(jsonStr));
+            const baseUrl = window.location.origin + window.location.pathname;
+            return `${baseUrl}#data=${encoded}`;
+        }
+
+        function copyShareableUrl() {
+            const shareUrl = getShareableUrl();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    Swal.fire({
+                        title: '✅ 專屬分享連結已複製！',
+                        html: `連結內已包含您目前設定的<strong>總資金預算、所有股票成本、持倉與停泊資金</strong>。<br>直接傳給李老師，老師點開就能看到即時戰報！`,
+                        icon: 'success',
+                        confirmButtonText: '太棒了'
+                    });
+                }).catch(() => {
+                    prompt('請複製以下專屬分享網址：', shareUrl);
+                });
+            } else {
+                prompt('請複製以下專屬分享網址：', shareUrl);
+            }
+        }
+
+        function updateLineShareLink() {
+            const shareUrl = getShareableUrl();
+            const btn = document.getElementById('lineShareTopBtn');
+            btn.href = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`;
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            stockModalInstance = new bootstrap.Modal(document.getElementById('stockModal'));
+            loadPortfolioFromStorageOrUrl();
+            renderDashboard();
+            updateTeachingCard();
+            updateLineShareLink();
+        });
+    </script>
+</body>
+</html>
